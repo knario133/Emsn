@@ -1,0 +1,27 @@
+{
+  "name": "intramessenger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test frontend/tests/**/*.test.js",
+    "build": "node tools/frontend/build.mjs",
+    "check": "npm run format:check && npm run lint && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.20.0",
+    "esbuild": "0.25.0",
+    "eslint": "9.20.1",
+    "globals": "15.15.0",
+    "prettier": "3.5.1"
+  },
+  "allowScripts": {
+    "esbuild@0.25.0": true
+  }
+}

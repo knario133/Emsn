@@ -179,12 +179,12 @@ No agregues todavía archivos, hilos, reacciones ni notificaciones.
 
 ## 2.3 Usuarios y roles
 
-| Rol | Origen | Facultades |
-|---|---|---|
-| Usuario | Active Directory | Chats, grupos, canales permitidos, archivos, snippets personales |
-| Moderador de canal | Membresía interna | Gestionar miembros, nombre, descripción y mensajes fijados |
-| Administrador | Grupo AD configurable | Administración global, auditoría, límites y canales |
-| Operador técnico | Grupo AD configurable | Diagnóstico, salud, métricas y soporte sin acceso indiscriminado al contenido |
+| Rol                | Origen                | Facultades                                                                    |
+| ------------------ | --------------------- | ----------------------------------------------------------------------------- |
+| Usuario            | Active Directory      | Chats, grupos, canales permitidos, archivos, snippets personales              |
+| Moderador de canal | Membresía interna     | Gestionar miembros, nombre, descripción y mensajes fijados                    |
+| Administrador      | Grupo AD configurable | Administración global, auditoría, límites y canales                           |
+| Operador técnico   | Grupo AD configurable | Diagnóstico, salud, métricas y soporte sin acceso indiscriminado al contenido |
 
 ---
 
@@ -571,22 +571,22 @@ Error:
 
 Caché local de identidad, no sistema de credenciales.
 
-| Campo | Tipo sugerido | Descripción |
-|---|---|---|
-| IdUsuario | bigint identity | Clave interna |
-| Dominio | nvarchar(128) | Dominio AD |
-| SamAccountName | nvarchar(128) | Usuario |
-| NombreDominio | nvarchar(260) | `DOMINIO\usuario` único |
-| NombreMostrar | nvarchar(256) | Display name |
-| Correo | nvarchar(256) null | Mail AD |
-| Departamento | nvarchar(256) null | Department AD |
-| Cargo | nvarchar(256) null | Title AD |
-| FotoHash | varbinary(32) null | Hash para invalidar caché |
-| EstadoManual | tinyint | Disponible, ocupado, no molestar |
-| UltimaActividadUtc | datetime2 | Última actividad |
-| FechaCreacionUtc | datetime2 | Alta en caché |
-| FechaActualizacionUtc | datetime2 | Refresco AD |
-| Activo | bit | Estado lógico |
+| Campo                 | Tipo sugerido      | Descripción                      |
+| --------------------- | ------------------ | -------------------------------- |
+| IdUsuario             | bigint identity    | Clave interna                    |
+| Dominio               | nvarchar(128)      | Dominio AD                       |
+| SamAccountName        | nvarchar(128)      | Usuario                          |
+| NombreDominio         | nvarchar(260)      | `DOMINIO\usuario` único          |
+| NombreMostrar         | nvarchar(256)      | Display name                     |
+| Correo                | nvarchar(256) null | Mail AD                          |
+| Departamento          | nvarchar(256) null | Department AD                    |
+| Cargo                 | nvarchar(256) null | Title AD                         |
+| FotoHash              | varbinary(32) null | Hash para invalidar caché        |
+| EstadoManual          | tinyint            | Disponible, ocupado, no molestar |
+| UltimaActividadUtc    | datetime2          | Última actividad                 |
+| FechaCreacionUtc      | datetime2          | Alta en caché                    |
+| FechaActualizacionUtc | datetime2          | Refresco AD                      |
+| Activo                | bit                | Estado lógico                    |
 
 Índice único: `(Dominio, SamAccountName)`.
 
@@ -594,19 +594,19 @@ Caché local de identidad, no sistema de credenciales.
 
 ### `TA_IM_CONVERSACION`
 
-| Campo | Descripción |
-|---|---|
-| IdConversacion | bigint identity |
-| GuidConversacion | uniqueidentifier |
-| Tipo | 1 directa, 2 grupo temporal, 3 canal |
-| Nombre | nullable en directa |
-| Descripcion | opcional |
-| CreadoPor | usuario |
-| FechaCreacionUtc | UTC |
-| EsTemporal | bit |
-| FechaExpiracionUtc | opcional |
-| Activa | bit |
-| Version | rowversion |
+| Campo              | Descripción                          |
+| ------------------ | ------------------------------------ |
+| IdConversacion     | bigint identity                      |
+| GuidConversacion   | uniqueidentifier                     |
+| Tipo               | 1 directa, 2 grupo temporal, 3 canal |
+| Nombre             | nullable en directa                  |
+| Descripcion        | opcional                             |
+| CreadoPor          | usuario                              |
+| FechaCreacionUtc   | UTC                                  |
+| EsTemporal         | bit                                  |
+| FechaExpiracionUtc | opcional                             |
+| Activa             | bit                                  |
+| Version            | rowversion                           |
 
 ### `TA_IM_CONVERSACION_MIEMBRO`
 
@@ -627,23 +627,23 @@ Restricción única activa por conversación/usuario.
 
 ### `TA_IM_MENSAJE`
 
-| Campo | Descripción |
-|---|---|
-| IdMensaje | bigint identity |
-| ClientMessageGuid | uniqueidentifier idempotente |
-| IdConversacion | conversación |
-| IdUsuarioEmisor | emisor |
-| IdMensajePadre | respuesta/hilo |
-| Tipo | texto, código, sistema, archivo, alerta |
-| CuerpoMarkdown | nvarchar(max) |
-| CuerpoPlano | nvarchar(max) |
-| LenguajeCodigo | nvarchar(40) null |
-| Prioridad | normal, alta |
-| EsExpandible | bit |
-| FechaCreacionUtc | UTC |
-| FechaEdicionUtc | nullable |
-| FechaEliminacionUtc | nullable |
-| Version | rowversion |
+| Campo               | Descripción                             |
+| ------------------- | --------------------------------------- |
+| IdMensaje           | bigint identity                         |
+| ClientMessageGuid   | uniqueidentifier idempotente            |
+| IdConversacion      | conversación                            |
+| IdUsuarioEmisor     | emisor                                  |
+| IdMensajePadre      | respuesta/hilo                          |
+| Tipo                | texto, código, sistema, archivo, alerta |
+| CuerpoMarkdown      | nvarchar(max)                           |
+| CuerpoPlano         | nvarchar(max)                           |
+| LenguajeCodigo      | nvarchar(40) null                       |
+| Prioridad           | normal, alta                            |
+| EsExpandible        | bit                                     |
+| FechaCreacionUtc    | UTC                                     |
+| FechaEdicionUtc     | nullable                                |
+| FechaEliminacionUtc | nullable                                |
+| Version             | rowversion                              |
 
 Índices:
 
@@ -889,22 +889,22 @@ El servidor debe verificar autorización antes de agregar una conexión a un gru
 
 ## 12.3 Eventos servidor → cliente
 
-| Evento | Propósito |
-|---|---|
-| `messageCreated` | Mensaje persistido |
-| `messageUpdated` | Edición |
-| `messageDeleted` | Eliminación lógica |
-| `typingChanged` | Estado efímero |
-| `presenceChanged` | Presencia |
-| `readPositionChanged` | Último leído |
-| `conversationChanged` | Miembros o metadatos |
-| `urgentAlert` | Zumbido permitido |
-| `fileTransferOffered` | Oferta de archivo |
-| `fileTransferStateChanged` | Estado |
-| `webrtcSignal` | Offer/answer/ICE |
-| `codeSyncUpdate` | Actualización Yjs |
-| `codeAwarenessUpdate` | Cursores/presencia |
-| `serverNotice` | Mantenimiento o degradación |
+| Evento                     | Propósito                   |
+| -------------------------- | --------------------------- |
+| `messageCreated`           | Mensaje persistido          |
+| `messageUpdated`           | Edición                     |
+| `messageDeleted`           | Eliminación lógica          |
+| `typingChanged`            | Estado efímero              |
+| `presenceChanged`          | Presencia                   |
+| `readPositionChanged`      | Último leído                |
+| `conversationChanged`      | Miembros o metadatos        |
+| `urgentAlert`              | Zumbido permitido           |
+| `fileTransferOffered`      | Oferta de archivo           |
+| `fileTransferStateChanged` | Estado                      |
+| `webrtcSignal`             | Offer/answer/ICE            |
+| `codeSyncUpdate`           | Actualización Yjs           |
+| `codeAwarenessUpdate`      | Cursores/presencia          |
+| `serverNotice`             | Mantenimiento o degradación |
 
 ## 12.4 Cliente → hub
 
@@ -1026,15 +1026,15 @@ Umbrales configurables:
 
 Comandos iniciales:
 
-| Comando | Acción |
-|---|---|
-| `/code <lenguaje>` | abre editor de código |
-| `/clear` | limpia sólo la vista local, nunca elimina historial |
-| `/snippet <atajo>` | inserta snippet |
-| `/thread` | crea respuesta/hilo sobre mensaje seleccionado |
-| `/mute` | silencia conversación |
-| `/status <estado>` | cambia estado manual |
-| `/help` | lista comandos |
+| Comando            | Acción                                              |
+| ------------------ | --------------------------------------------------- |
+| `/code <lenguaje>` | abre editor de código                               |
+| `/clear`           | limpia sólo la vista local, nunca elimina historial |
+| `/snippet <atajo>` | inserta snippet                                     |
+| `/thread`          | crea respuesta/hilo sobre mensaje seleccionado      |
+| `/mute`            | silencia conversación                               |
+| `/status <estado>` | cambia estado manual                                |
+| `/help`            | lista comandos                                      |
 
 Todos los comandos deben mostrar confirmación antes de una acción destructiva.
 
@@ -1275,11 +1275,11 @@ Respetar ocultamiento de contenido sensible en pantalla bloqueada mediante confi
 
 ## 17.5 Prioridades
 
-| Prioridad | Comportamiento |
-|---|---|
-| Baja/normal | badge, LED interno, toast según preferencias |
-| Mención/hilo | badge específico y toast |
-| Urgente | toast persistente, pulso visual, sonido permitido y auditoría |
+| Prioridad    | Comportamiento                                                |
+| ------------ | ------------------------------------------------------------- |
+| Baja/normal  | badge, LED interno, toast según preferencias                  |
+| Mención/hilo | badge específico y toast                                      |
+| Urgente      | toast persistente, pulso visual, sonido permitido y auditoría |
 
 ---
 
@@ -1577,23 +1577,23 @@ Probar:
 
 # 23. Registro de riesgos
 
-| ID | Riesgo | Impacto | Mitigación |
-|---|---|---:|---|
-| R01 | Jules no compila .NET Framework en Ubuntu | Alto | validación Windows obligatoria |
-| R02 | Push bloqueado por proxy/políticas | Alto | prueba temprana; fallback mientras app abierta |
-| R03 | P2P bloqueado por firewall | Alto | TURN TLS 443 |
-| R04 | Archivos grandes agotan memoria | Alto | File System Access + streaming |
-| R05 | Markdown introduce XSS | Crítico | render + DOMPurify + CSP |
-| R06 | CSRF con Windows Auth | Crítico | token antiforgery propio |
-| R07 | AD lento o indisponible | Medio | caché y timeouts |
-| R08 | Diseño retro reduce legibilidad | Medio | tokens, AA, pruebas usuarios |
-| R09 | Edición colaborativa demasiado compleja | Alto | posponer y usar Yjs |
-| R10 | PWA no puede parpadear barra exacta | Medio | badge/toast/pulso; companion futuro |
-| R11 | Usuarios agregados ven historial privado | Crítico | crear grupo nuevo sin copiar historial |
-| R12 | SignalR cae y se pierden mensajes | Alto | persistir por handler antes de broadcast |
-| R13 | Dependencias frontend remotas | Medio | vendoring local y versiones fijadas |
-| R14 | Abuse de zumbidos | Alto | límite servidor, mute y auditoría |
-| R15 | Transferencia de malware | Alto | advertencias, políticas y posible AV en fallback |
+| ID  | Riesgo                                    | Impacto | Mitigación                                       |
+| --- | ----------------------------------------- | ------: | ------------------------------------------------ |
+| R01 | Jules no compila .NET Framework en Ubuntu |    Alto | validación Windows obligatoria                   |
+| R02 | Push bloqueado por proxy/políticas        |    Alto | prueba temprana; fallback mientras app abierta   |
+| R03 | P2P bloqueado por firewall                |    Alto | TURN TLS 443                                     |
+| R04 | Archivos grandes agotan memoria           |    Alto | File System Access + streaming                   |
+| R05 | Markdown introduce XSS                    | Crítico | render + DOMPurify + CSP                         |
+| R06 | CSRF con Windows Auth                     | Crítico | token antiforgery propio                         |
+| R07 | AD lento o indisponible                   |   Medio | caché y timeouts                                 |
+| R08 | Diseño retro reduce legibilidad           |   Medio | tokens, AA, pruebas usuarios                     |
+| R09 | Edición colaborativa demasiado compleja   |    Alto | posponer y usar Yjs                              |
+| R10 | PWA no puede parpadear barra exacta       |   Medio | badge/toast/pulso; companion futuro              |
+| R11 | Usuarios agregados ven historial privado  | Crítico | crear grupo nuevo sin copiar historial           |
+| R12 | SignalR cae y se pierden mensajes         |    Alto | persistir por handler antes de broadcast         |
+| R13 | Dependencias frontend remotas             |   Medio | vendoring local y versiones fijadas              |
+| R14 | Abuse de zumbidos                         |    Alto | límite servidor, mute y auditoría                |
+| R15 | Transferencia de malware                  |    Alto | advertencias, políticas y posible AV en fallback |
 
 ---
 
@@ -1623,7 +1623,7 @@ Probar:
 
 ---
 
-### [ ] P0-T02 — Crear solución Web Forms .NET Framework 4.8
+### [x] P0-T02 — Crear solución Web Forms .NET Framework 4.8
 
 **Objetivo:** scaffold mínimo sin funcionalidad de negocio.
 
@@ -1648,7 +1648,7 @@ Probar:
 
 ---
 
-### [ ] P0-T03 — Pipeline frontend
+### [x] P0-T03 — Pipeline frontend
 
 **Objetivo:** establecer build reproducible de assets.
 
@@ -2311,40 +2311,40 @@ Estas preguntas no bloquean el scaffold, pero sí determinadas fases:
 
 ## Google: prompting y Jules
 
-- Google Workspace, *Prompting Guide 101*:  
+- Google Workspace, _Prompting Guide 101_:
   https://services.google.com/fh/files/misc/gemini_for_workspace_prompt_guide_october_2024_digital_final.pdf
-- Google Cloud, *Overview of prompting strategies*:  
+- Google Cloud, _Overview of prompting strategies_:
   https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/prompts/prompt-design-strategies
-- Google Cloud, *Structure prompts*:  
+- Google Cloud, _Structure prompts_:
   https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/prompts/structure-prompts
-- Google Cloud, *Break down complex tasks into simpler prompts*:  
+- Google Cloud, _Break down complex tasks into simpler prompts_:
   https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/prompts/break-down-prompts
-- Jules, *Getting started* y uso de `AGENTS.md`:  
+- Jules, _Getting started_ y uso de `AGENTS.md`:
   https://jules.google/docs/
-- Jules, *Running tasks*:  
+- Jules, _Running tasks_:
   https://jules.google/docs/running-tasks/
-- Jules, *Environment setup*:  
+- Jules, _Environment setup_:
   https://jules.google/docs/environment/
 
 ## Microsoft y estándares web
 
-- Microsoft Edge, *Use Progressive Web Apps*:  
+- Microsoft Edge, _Use Progressive Web Apps_:
   https://learn.microsoft.com/en-us/microsoft-edge/progressive-web-apps/ux
-- Microsoft Edge, *Badges and notifications*:  
+- Microsoft Edge, _Badges and notifications_:
   https://learn.microsoft.com/en-us/microsoft-edge/progressive-web-apps/how-to/notifications-badges
-- Microsoft Edge, *Background syncs*:  
+- Microsoft Edge, _Background syncs_:
   https://learn.microsoft.com/en-us/microsoft-edge/progressive-web-apps/how-to/background-syncs
-- Microsoft Edge, *Store data on the device / File System Access*:  
+- Microsoft Edge, _Store data on the device / File System Access_:
   https://learn.microsoft.com/en-us/microsoft-edge/progressive-web-apps/how-to/offline
-- Microsoft, *ASP.NET SignalR 2 high-frequency realtime tutorial*:  
+- Microsoft, _ASP.NET SignalR 2 high-frequency realtime tutorial_:
   https://learn.microsoft.com/es-es/aspnet/signalr/overview/getting-started/tutorial-high-frequency-realtime-with-signalr
-- Web.dev, *WebRTC data channels*:  
+- Web.dev, _WebRTC data channels_:
   https://web.dev/articles/webrtc-datachannels
-- Web.dev, *WebRTC infrastructure, STUN and TURN*:  
+- Web.dev, _WebRTC infrastructure, STUN and TURN_:
   https://web.dev/articles/webrtc-infrastructure
-- W3C, *Notifications API*:  
+- W3C, _Notifications API_:
   https://www.w3.org/TR/notifications/
-- W3C, *Badging API*:  
+- W3C, _Badging API_:
   https://www.w3.org/TR/badging/
 
 ---

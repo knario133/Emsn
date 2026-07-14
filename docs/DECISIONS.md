@@ -34,3 +34,10 @@
 **Decisión:** WebRTC DataChannel como transporte primario, con SignalR para señalización.  
 **Motivo:** transferencia temporal sin almacenamiento permanente.  
 **Consecuencia:** puede requerir TURN para redes restrictivas.
+
+## ADR-006 — Versionado de artefactos frontend
+
+**Estado:** Aceptada
+**Decisión:** Los artefactos generados por el build frontend (`Scripts/dist/app.js` y `Content/app/app.css`) deben ser versionados en el repositorio Git.
+**Motivo:** Garantizar que el despliegue del proyecto ASP.NET Web Forms hacia el servidor IIS de producción sea autónomo y no dependa de tener Node.js instalado o de ejecutar herramientas de frontend en el entorno productivo.
+**Consecuencia:** Requiere ejecutar y validar consistentemente el script de compilación (vía npm run build/check) para asegurar que el código fuente y los artefactos estén sincronizados antes de cada commit.

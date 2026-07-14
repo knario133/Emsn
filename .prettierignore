@@ -1,0 +1,10 @@
+# Ignorar histórico y dependencias (.NET/node)
+node_modules/
+bin/
+obj/
+packages/
+src/IntraMessenger.Web/Scripts/vendor/
+
+# Ignorar artefactos generados (no formatear lo que genera esbuild)
+src/IntraMessenger.Web/Scripts/dist/
+src/IntraMessenger.Web/Content/app/
