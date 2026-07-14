@@ -9,7 +9,7 @@ namespace IntraMessenger.Web
         {
             if (!IsPostBack)
             {
-                lblStatus.Text = "En línea (P0-T02 completado)";
+                lblStatus.Text = "Interfaz local disponible";
             }
         }
     }
