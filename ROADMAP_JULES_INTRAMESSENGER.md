@@ -1743,7 +1743,9 @@ Procedimientos mínimos de bootstrap.
 
 ---
 
-### [ ] P1-T04 — Shell visual responsive
+### [x] P1-T04 — Shell visual responsive
+*(Nota: Adelantada deliberadamente antes de P1-T01 para validar primero la experiencia visual)*
+
 
 **Objetivo:** implementar estructura visual basada en referencia.
 
