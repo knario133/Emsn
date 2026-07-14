@@ -1623,7 +1623,7 @@ Probar:
 
 ---
 
-### [ ] P0-T02 — Crear solución Web Forms .NET Framework 4.8
+### [x] P0-T02 — Crear solución Web Forms .NET Framework 4.8
 
 **Objetivo:** scaffold mínimo sin funcionalidad de negocio.
 
