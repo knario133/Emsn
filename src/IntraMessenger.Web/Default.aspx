@@ -40,6 +40,10 @@
                 <symbol id="icon-phone" viewBox="0 0 24 24">
                     <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </symbol>
+                <symbol id="icon-logo" viewBox="0 0 24 24">
+                    <rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 6l10 7 10-7" />
+                </symbol>
             </defs>
         </svg>
 
@@ -49,6 +53,14 @@
             <!-- Left Panel: Contacts Navigation -->
             <nav id="nav-panel" class="panel nav-panel" aria-label="Contactos">
                 <header class="nav-header">
+                    <div class="product-identity">
+                        <svg class="icon product-logo" aria-hidden="true" focusable="false"><use href="#icon-logo"></use></svg>
+                        <div class="product-title-group">
+                            <span class="product-title">IntraMessenger</span>
+                            <span class="product-subtitle">Vista local</span>
+                        </div>
+                    </div>
+
                     <div class="user-profile">
                         <div class="avatar my-avatar" aria-hidden="true">US</div>
                         <div class="user-info">
@@ -107,7 +119,7 @@
                         </button>
                     </div>
                     <div class="composer-input-container">
-                        <textarea id="composerInput" class="composer-input" rows="1" placeholder="Escribe un mensaje..." aria-label="Mensaje"></textarea>
+                        <textarea id="composerInput" class="composer-input" rows="1" maxlength="500" placeholder="Escribe un mensaje..." aria-label="Mensaje"></textarea>
                         <button type="button" id="btnSend" class="icon-btn btn-send" aria-label="Enviar mensaje" disabled>
                             <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-send"></use></svg>
                         </button>

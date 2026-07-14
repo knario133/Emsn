@@ -19,12 +19,15 @@
     return contacts.find((c) => String(c.id) === String(id)) || null;
   }
   function getCharacterCount(text, maxChars) {
-    if (text == null) return { count: 0, max: maxChars, isOver: false };
-    const count = String(text).length;
+    if (text == null) return { count: 0, max: maxChars, isOver: false, isValid: false };
+    const str = String(text);
+    const count = str.length;
+    const isOnlySpaces = str.trim().length === 0;
     return {
       count,
       max: maxChars,
-      isOver: count > maxChars
+      isOver: count > maxChars,
+      isValid: count > 0 && count <= maxChars && !isOnlySpaces
     };
   }
   function getResponsiveViewName(width) {
@@ -38,45 +41,65 @@
       name: "Camila Rojas",
       department: "Diseño de Servicios",
       status: "online",
+      statusLabel: "En línea",
       avatar: "CR",
       email: "crojas@demo.local",
-      description: "UX/UI & Service Design"
+      description: "UX/UI & Service Design",
+      preview: "Revisemos el prototipo.",
+      time: "10:30",
+      unreadCount: 2
     },
     {
       id: "c2",
       name: "Diego Muñoz",
       department: "Operaciones",
       status: "busy",
+      statusLabel: "Ocupado",
       avatar: "DM",
       email: "dmunoz@demo.local",
-      description: "Coordinador General"
+      description: "Coordinador General",
+      preview: "Te llamo en 5 min.",
+      time: "09:15",
+      unreadCount: 0
     },
     {
       id: "c3",
       name: "Valentina Soto",
       department: "Riesgo",
       status: "offline",
+      statusLabel: "Desconectado",
       avatar: "VS",
       email: "vsoto@demo.local",
-      description: "Análisis de Riesgo"
+      description: "Análisis de Riesgo",
+      preview: "Documento aprobado.",
+      time: "Ayer",
+      unreadCount: 0
     },
     {
       id: "c4",
       name: "Matías Herrera",
       department: "Tecnología",
       status: "online",
+      statusLabel: "En línea",
       avatar: "MH",
       email: "mherrera@demo.local",
-      description: "Ingeniero de Software"
+      description: "Ingeniero de Software",
+      preview: "Despliegue finalizado.",
+      time: "Ayer",
+      unreadCount: 0
     },
     {
       id: "c5",
       name: "Canal Soporte Interno",
       department: "Soporte",
       status: "online",
+      statusLabel: "En línea",
       avatar: "SI",
       email: "soporte@demo.local",
-      description: "Atención a usuarios internos"
+      description: "Atención a usuarios internos",
+      preview: "Ticket #429 resuelto.",
+      time: "Lun",
+      unreadCount: 0
     }
   ];
   var activeContactId = null;
@@ -93,6 +116,8 @@
   var elBtnToggleContext;
   var elBtnCloseContext;
   var elBtnBackToContacts;
+  var elNavPanel;
+  var elMainPanel;
   function initDOM() {
     elContactsList = document.getElementById("contactsList");
     elSearchInput = document.getElementById("searchInput");
@@ -107,6 +132,8 @@
     elBtnToggleContext = document.getElementById("btnToggleContext");
     elBtnCloseContext = document.getElementById("btnCloseContext");
     elBtnBackToContacts = document.getElementById("btnBackToContacts");
+    elNavPanel = document.getElementById("nav-panel");
+    elMainPanel = document.getElementById("main-content");
   }
   function announce(msg) {
     if (elA11yAnnouncer) {
@@ -131,21 +158,22 @@
       div.setAttribute("role", "option");
       div.setAttribute("aria-selected", isSelected ? "true" : "false");
       div.dataset.id = contact.id;
-      div.tabIndex = 0;
+      div.tabIndex = isSelected ? 0 : -1;
+      const unreadHtml = contact.unreadCount > 0 ? `<span class="contact-item-unread">${contact.unreadCount}</span>` : "";
       div.innerHTML = `
       <div class="avatar ${contact.status}" aria-hidden="true">${contact.avatar}</div>
       <div class="contact-details">
-        <span class="contact-name">${contact.name}</span>
-        <span class="contact-dept">${contact.department}</span>
+        <div class="contact-item-header">
+            <span class="contact-name">${contact.name}</span>
+            <span class="contact-item-time">${contact.time}</span>
+        </div>
+        <div class="contact-item-footer">
+            <span class="contact-item-preview">${contact.preview || contact.statusLabel}</span>
+            ${unreadHtml}
+        </div>
       </div>
     `;
       div.addEventListener("click", () => selectContact(contact.id));
-      div.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          selectContact(contact.id);
-        }
-      });
       elContactsList.appendChild(div);
     });
   }
@@ -158,32 +186,34 @@
       return;
     }
     elActiveContactHeader.innerHTML = `
-    <div class="avatar ${contact.status}" style="width: 32px; height: 32px; font-size: 12px;">${contact.avatar}</div>
-    <div style="display: flex; flex-direction: column;">
-      <span style="font-weight: 600; font-size: 14px;">${contact.name}</span>
-      <span style="font-size: 12px; color: var(--text-dim);">${contact.department}</span>
+    <div class="avatar ${contact.status} active-contact-avatar" aria-hidden="true">${contact.avatar}</div>
+    <div class="active-contact-text">
+      <span class="active-contact-name">${contact.name}</span>
+      <span class="active-contact-dept">${contact.statusLabel} - ${contact.department}</span>
     </div>
   `;
     elContextBody.innerHTML = `
+    <div class="demo-badge" style="margin-bottom:16px; display:inline-block;">Datos de demostración</div>
     <div class="profile-card">
-      <div class="avatar ${contact.status}">${contact.avatar}</div>
+      <div class="avatar ${contact.status}" aria-hidden="true">${contact.avatar}</div>
       <div class="profile-name">${contact.name}</div>
-      <div class="profile-dept">${contact.department}</div>
+      <div class="profile-dept">${contact.statusLabel}</div>
     </div>
 
     <div class="profile-actions">
       <button type="button" class="btn-action">
-        <svg class="icon"><use href="#icon-search"></use></svg>
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-search"></use></svg>
         Buscar
       </button>
       <button type="button" class="btn-action">
-        <svg class="icon"><use href="#icon-phone"></use></svg>
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-phone"></use></svg>
         Llamar
       </button>
     </div>
 
     <div class="profile-section">
       <h3>Información de Contacto</h3>
+      <p class="text-dim">Departamento: ${contact.department}</p>
       <p class="text-dim">Email: ${contact.email}</p>
       <p class="text-dim">${contact.description}</p>
     </div>
@@ -194,6 +224,80 @@
     </div>
   `;
   }
+  function syncResponsiveState() {
+    const viewName = getResponsiveViewName(window.innerWidth);
+    if (viewName === "desktop") {
+      document.body.classList.remove("mobile-view-nav", "mobile-view-chat");
+      if (elContextPanel) {
+        elContextPanel.classList.remove("drawer-open");
+        elContextPanel.setAttribute("aria-hidden", "false");
+        elContextPanel.removeAttribute("inert");
+      }
+      if (elDrawerOverlay) {
+        elDrawerOverlay.classList.remove("active");
+        elDrawerOverlay.setAttribute("aria-hidden", "true");
+      }
+      if (elNavPanel) {
+        elNavPanel.setAttribute("aria-hidden", "false");
+        elNavPanel.removeAttribute("inert");
+      }
+      if (elMainPanel) {
+        elMainPanel.setAttribute("aria-hidden", "false");
+        elMainPanel.removeAttribute("inert");
+      }
+      if (elBtnToggleContext) {
+        elBtnToggleContext.setAttribute("aria-expanded", "true");
+        elBtnToggleContext.classList.remove("btn-active");
+      }
+    } else if (viewName === "tablet") {
+      document.body.classList.remove("mobile-view-nav", "mobile-view-chat");
+      if (elNavPanel) {
+        elNavPanel.setAttribute("aria-hidden", "false");
+        elNavPanel.removeAttribute("inert");
+      }
+      if (elMainPanel) {
+        elMainPanel.setAttribute("aria-hidden", "false");
+        elMainPanel.removeAttribute("inert");
+      }
+      if (elContextPanel && !elContextPanel.classList.contains("drawer-open")) {
+        elContextPanel.setAttribute("aria-hidden", "true");
+        elContextPanel.setAttribute("inert", "true");
+      }
+      if (elBtnToggleContext && (!elContextPanel || !elContextPanel.classList.contains("drawer-open"))) {
+        elBtnToggleContext.setAttribute("aria-expanded", "false");
+      }
+    } else if (viewName === "mobile") {
+      if (!document.body.classList.contains("mobile-view-nav") && !document.body.classList.contains("mobile-view-chat")) {
+        document.body.classList.add("mobile-view-nav");
+      }
+      if (document.body.classList.contains("mobile-view-nav")) {
+        if (elNavPanel) {
+          elNavPanel.setAttribute("aria-hidden", "false");
+          elNavPanel.removeAttribute("inert");
+        }
+        if (elMainPanel) {
+          elMainPanel.setAttribute("aria-hidden", "true");
+          elMainPanel.setAttribute("inert", "true");
+        }
+      } else {
+        if (elNavPanel) {
+          elNavPanel.setAttribute("aria-hidden", "true");
+          elNavPanel.setAttribute("inert", "true");
+        }
+        if (elMainPanel) {
+          elMainPanel.setAttribute("aria-hidden", "false");
+          elMainPanel.removeAttribute("inert");
+        }
+      }
+      if (elContextPanel && !elContextPanel.classList.contains("drawer-open")) {
+        elContextPanel.setAttribute("aria-hidden", "true");
+        elContextPanel.setAttribute("inert", "true");
+      }
+      if (elBtnToggleContext && (!elContextPanel || !elContextPanel.classList.contains("drawer-open"))) {
+        elBtnToggleContext.setAttribute("aria-expanded", "false");
+      }
+    }
+  }
   function selectContact(id) {
     activeContactId = id;
     const query = elSearchInput ? elSearchInput.value : "";
@@ -203,27 +307,28 @@
     if (viewName === "mobile") {
       document.body.classList.remove("mobile-view-nav");
       document.body.classList.add("mobile-view-chat");
+      syncResponsiveState();
     }
   }
   function setupComposer() {
     if (!elComposerInput || !elBtnSend || !elCharCount) return;
     const maxChars = 500;
     elComposerInput.addEventListener("input", () => {
-      const { count, isOver } = getCharacterCount(elComposerInput.value, maxChars);
+      const { count, isValid, isOver } = getCharacterCount(elComposerInput.value, maxChars);
       elCharCount.textContent = `${count} / ${maxChars}`;
       if (isOver) {
         elCharCount.style.color = "var(--status-error)";
-        elBtnSend.disabled = true;
       } else {
         elCharCount.style.color = "var(--text-dim)";
-        elBtnSend.disabled = count === 0;
       }
+      elBtnSend.disabled = !isValid;
     });
     elBtnSend.addEventListener("click", () => {
       if (elComposerInput.value.trim() !== "") {
         elComposerInput.value = "";
         const { count } = getCharacterCount("", maxChars);
         elCharCount.textContent = `${count} / ${maxChars}`;
+        elCharCount.style.color = "var(--text-dim)";
         elBtnSend.disabled = true;
         announce("Demostración visual: no se envió ningún mensaje.");
       }
@@ -231,6 +336,8 @@
   }
   function toggleContextDrawer(forceState) {
     if (!elContextPanel || !elDrawerOverlay) return;
+    const viewName = getResponsiveViewName(window.innerWidth);
+    if (viewName === "desktop") return;
     const isOpen = elContextPanel.classList.contains("drawer-open");
     const newState = forceState !== void 0 ? forceState : !isOpen;
     if (newState) {
@@ -238,22 +345,67 @@
       elDrawerOverlay.classList.add("active");
       elDrawerOverlay.setAttribute("aria-hidden", "false");
       elContextPanel.setAttribute("aria-hidden", "false");
+      elContextPanel.removeAttribute("inert");
       if (elBtnToggleContext) {
         elBtnToggleContext.setAttribute("aria-expanded", "true");
         elBtnToggleContext.classList.add("btn-active");
+      }
+      if (elBtnCloseContext) {
+        elBtnCloseContext.focus();
       }
     } else {
       elContextPanel.classList.remove("drawer-open");
       elDrawerOverlay.classList.remove("active");
       elDrawerOverlay.setAttribute("aria-hidden", "true");
-      if (getResponsiveViewName(window.innerWidth) !== "desktop") {
-        elContextPanel.setAttribute("aria-hidden", "true");
-      }
+      elContextPanel.setAttribute("aria-hidden", "true");
+      elContextPanel.setAttribute("inert", "true");
       if (elBtnToggleContext) {
         elBtnToggleContext.setAttribute("aria-expanded", "false");
         elBtnToggleContext.classList.remove("btn-active");
+        elBtnToggleContext.focus();
       }
     }
+  }
+  function setupListboxNavigation() {
+    if (!elContactsList) return;
+    elContactsList.addEventListener("keydown", (e) => {
+      const items = Array.from(elContactsList.querySelectorAll(".contact-item"));
+      if (items.length === 0) return;
+      let currentIndex = items.findIndex((item) => item === document.activeElement);
+      let newIndex = currentIndex;
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          newIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          newIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+          break;
+        case "Home":
+          e.preventDefault();
+          newIndex = 0;
+          break;
+        case "End":
+          e.preventDefault();
+          newIndex = items.length - 1;
+          break;
+        case "Enter":
+        case " ":
+          e.preventDefault();
+          if (currentIndex >= 0) {
+            items[currentIndex].click();
+          }
+          return;
+        default:
+          return;
+      }
+      if (newIndex >= 0 && newIndex !== currentIndex) {
+        items.forEach((item) => item.tabIndex = -1);
+        items[newIndex].tabIndex = 0;
+        items[newIndex].focus();
+      }
+    });
   }
   function setupEvents() {
     if (elSearchInput) {
@@ -280,22 +432,11 @@
       elBtnBackToContacts.addEventListener("click", () => {
         document.body.classList.remove("mobile-view-chat");
         document.body.classList.add("mobile-view-nav");
+        syncResponsiveState();
       });
     }
-    window.addEventListener("resize", () => {
-      const viewName = getResponsiveViewName(window.innerWidth);
-      if (viewName === "desktop") {
-        document.body.classList.remove("mobile-view-nav", "mobile-view-chat");
-        if (elContextPanel) elContextPanel.setAttribute("aria-hidden", "false");
-        if (elDrawerOverlay) elDrawerOverlay.classList.remove("active");
-        if (elContextPanel) elContextPanel.classList.remove("drawer-open");
-        if (elBtnToggleContext) elBtnToggleContext.classList.remove("btn-active");
-      } else if (viewName === "mobile") {
-        if (!document.body.classList.contains("mobile-view-nav") && !document.body.classList.contains("mobile-view-chat")) {
-          document.body.classList.add("mobile-view-nav");
-        }
-      }
-    });
+    setupListboxNavigation();
+    window.addEventListener("resize", syncResponsiveState);
   }
   function initApp() {
     initDOM();
@@ -309,6 +450,7 @@
     } else if (viewName === "mobile") {
       document.body.classList.add("mobile-view-nav");
     }
+    syncResponsiveState();
     renderContacts();
     renderActiveContact();
   }

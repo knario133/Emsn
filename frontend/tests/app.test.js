@@ -6,6 +6,7 @@ import {
   filterContacts,
   getContactById,
   getCharacterCount,
+  getResponsiveViewName,
 } from '../src/js/app.js';
 
 test('normalizeSearchText normaliza mayúsculas y acentos', () => {
@@ -61,17 +62,33 @@ test('getContactById busca el contacto correcto', () => {
   assert.equal(getContactById(null, '1'), null);
 });
 
-test('getCharacterCount cuenta caracteres y límites', () => {
+test('getCharacterCount valida longitud y contenido vacío', () => {
   const t1 = getCharacterCount('Hola', 10);
   assert.equal(t1.count, 4);
   assert.equal(t1.max, 10);
   assert.equal(t1.isOver, false);
+  assert.equal(t1.isValid, true);
 
   const t2 = getCharacterCount('Hola Mundo', 5);
   assert.equal(t2.count, 10);
   assert.equal(t2.isOver, true);
+  assert.equal(t2.isValid, false);
 
   const t3 = getCharacterCount(null, 10);
   assert.equal(t3.count, 0);
   assert.equal(t3.isOver, false);
+  assert.equal(t3.isValid, false); // empty string invalid
+
+  const t4 = getCharacterCount('   ', 10); // only spaces
+  assert.equal(t4.count, 3);
+  assert.equal(t4.isOver, false);
+  assert.equal(t4.isValid, false); // should be invalid if only spaces
+});
+
+test('getResponsiveViewName retorna el modo correcto en los límites', () => {
+  assert.equal(getResponsiveViewName(767), 'mobile');
+  assert.equal(getResponsiveViewName(768), 'tablet');
+  assert.equal(getResponsiveViewName(1199), 'tablet');
+  assert.equal(getResponsiveViewName(1200), 'desktop');
+  assert.equal(getResponsiveViewName(1440), 'desktop');
 });
