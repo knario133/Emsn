@@ -468,21 +468,43 @@ function toggleContextDrawer(forceState) {
       elBtnCloseContext.focus();
     }
   } else {
-    // Restore states
+    // Correct Order for closing:
+    // 1. Remove open class
     elContextPanel.classList.remove('drawer-open');
+    // 2. Deactivate overlay and make it hidden
     elDrawerOverlay.classList.remove('active');
     elDrawerOverlay.setAttribute('aria-hidden', 'true');
-    elContextPanel.setAttribute('aria-hidden', 'true');
-    elContextPanel.setAttribute('inert', 'true'); // Must be inert before receiving focus!
 
-    // Call sync to correctly re-evaluate background panels
-    syncResponsiveState();
+    // 3. Restore accessibility of background panels based on viewName
+    if (viewName === 'tablet') {
+      if (elNavPanel) elNavPanel.removeAttribute('inert');
+      if (elMainPanel) elMainPanel.removeAttribute('inert');
+    } else if (viewName === 'mobile') {
+      if (document.body.classList.contains('mobile-view-nav')) {
+        if (elNavPanel) elNavPanel.removeAttribute('inert');
+      } else {
+        if (elMainPanel) elMainPanel.removeAttribute('inert');
+      }
+    }
 
+    // 4. Update the toggle button
     if (elBtnToggleContext) {
       elBtnToggleContext.setAttribute('aria-expanded', 'false');
       elBtnToggleContext.classList.remove('btn-active');
-      elBtnToggleContext.focus(); // Return focus
+      // 5. Move focus back to the button before making the panel inert
+      try {
+        elBtnToggleContext.focus({ preventScroll: true });
+      } catch {
+        elBtnToggleContext.focus(); // Fallback
+      }
     }
+
+    // 6. Safely make context panel hidden and inert
+    elContextPanel.setAttribute('aria-hidden', 'true');
+    elContextPanel.setAttribute('inert', 'true');
+
+    // 7. Ensure layout is clean
+    syncResponsiveState();
   }
 }
 
@@ -585,7 +607,18 @@ function setupEvents() {
   setupListboxNavigation();
 
   // Window Resize Handle
-  window.addEventListener('resize', syncResponsiveState);
+  window.addEventListener('resize', () => {
+    // Handle focus moving to desktop when close button disappears
+    const wasCloseButtonFocused = document.activeElement === elBtnCloseContext;
+    const willBeDesktop = getResponsiveViewName(window.innerWidth) === 'desktop';
+
+    if (wasCloseButtonFocused && willBeDesktop && elContextPanel) {
+      elContextPanel.tabIndex = -1; // Temporal tabindex to receive focus
+      elContextPanel.focus({ preventScroll: true });
+    }
+
+    syncResponsiveState();
+  });
 }
 
 function initApp() {

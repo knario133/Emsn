@@ -400,14 +400,28 @@
       elContextPanel.classList.remove("drawer-open");
       elDrawerOverlay.classList.remove("active");
       elDrawerOverlay.setAttribute("aria-hidden", "true");
-      elContextPanel.setAttribute("aria-hidden", "true");
-      elContextPanel.setAttribute("inert", "true");
-      syncResponsiveState();
+      if (viewName === "tablet") {
+        if (elNavPanel) elNavPanel.removeAttribute("inert");
+        if (elMainPanel) elMainPanel.removeAttribute("inert");
+      } else if (viewName === "mobile") {
+        if (document.body.classList.contains("mobile-view-nav")) {
+          if (elNavPanel) elNavPanel.removeAttribute("inert");
+        } else {
+          if (elMainPanel) elMainPanel.removeAttribute("inert");
+        }
+      }
       if (elBtnToggleContext) {
         elBtnToggleContext.setAttribute("aria-expanded", "false");
         elBtnToggleContext.classList.remove("btn-active");
-        elBtnToggleContext.focus();
+        try {
+          elBtnToggleContext.focus({ preventScroll: true });
+        } catch {
+          elBtnToggleContext.focus();
+        }
       }
+      elContextPanel.setAttribute("aria-hidden", "true");
+      elContextPanel.setAttribute("inert", "true");
+      syncResponsiveState();
     }
   }
   function setupListboxNavigation() {
@@ -491,7 +505,15 @@
       });
     }
     setupListboxNavigation();
-    window.addEventListener("resize", syncResponsiveState);
+    window.addEventListener("resize", () => {
+      const wasCloseButtonFocused = document.activeElement === elBtnCloseContext;
+      const willBeDesktop = getResponsiveViewName(window.innerWidth) === "desktop";
+      if (wasCloseButtonFocused && willBeDesktop && elContextPanel) {
+        elContextPanel.tabIndex = -1;
+        elContextPanel.focus({ preventScroll: true });
+      }
+      syncResponsiveState();
+    });
   }
   function initApp() {
     initDOM();
