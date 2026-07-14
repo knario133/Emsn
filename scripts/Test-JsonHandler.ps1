@@ -25,48 +25,88 @@ function Test-Condition {
     }
 }
 
-function Test-JsonResponse {
+function Invoke-RawHttpRequest {
     param (
-        [System.Object]$Response,
-        [int]$ExpectedStatus,
-        [string]$ExpectedErrorCode = $null,
-        [bool]$IsWebResponse = $false
+        [string]$Url,
+        [string]$Method,
+        [string]$ContentType = $null,
+        [string]$Body = $null
     )
 
+    $request = [System.Net.WebRequest]::Create($Url)
+    $request.Method = $Method
+    $request.UseDefaultCredentials = $true
+
+    if ($null -ne $ContentType) {
+        $request.ContentType = $ContentType
+    }
+
+    if ($null -ne $Body -and $Method -ne "GET") {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($Body)
+        $request.ContentLength = $bytes.Length
+        $stream = $request.GetRequestStream()
+        $stream.Write($bytes, 0, $bytes.Length)
+        $stream.Close()
+    } elseif ($Method -eq "POST") {
+        $request.ContentLength = 0
+    }
+
+    $response = $null
     $statusCode = 0
     $headers = $null
     $content = ""
 
-    if ($IsWebResponse) {
-        $statusCode = [int]$Response.StatusCode
-        $headers = $Response.Headers
+    try {
+        $response = $request.GetResponse()
+    } catch [System.Net.WebException] {
+        $response = $_.Exception.Response
+    }
+
+    if ($null -ne $response) {
+        $statusCode = [int]$response.StatusCode
+        $headers = $response.Headers
 
         $reader = $null
         try {
-            $reader = New-Object System.IO.StreamReader($Response.GetResponseStream())
+            $reader = New-Object System.IO.StreamReader($response.GetResponseStream())
             $content = $reader.ReadToEnd()
         } finally {
             if ($null -ne $reader) {
                 $reader.Close()
             }
+            $response.Close()
         }
-    } else {
-        $statusCode = $Response.StatusCode
-        $headers = $Response.Headers
-        $content = $Response.Content
     }
+
+    return [PSCustomObject]@{
+        StatusCode = $statusCode
+        Headers = $headers
+        Content = $content
+    }
+}
+
+function Test-JsonResponse {
+    param (
+        [PSCustomObject]$Response,
+        [int]$ExpectedStatus,
+        [string]$ExpectedErrorCode = $null
+    )
+
+    $statusCode = $Response.StatusCode
+    $headers = $Response.Headers
+    $content = $Response.Content
 
     Test-Condition "Status Code es $ExpectedStatus" ($statusCode -eq $ExpectedStatus)
 
-    if ($null -ne $headers["Content-Type"]) {
+    if ($null -ne $headers -and $null -ne $headers["Content-Type"]) {
         Test-Condition "Content-Type contiene application/json" ($headers["Content-Type"] -match "application/json")
     } else {
         Test-Condition "Content-Type contiene application/json" $false
     }
 
-    $cacheControl = $headers["Cache-Control"]
-    if ($null -ne $cacheControl) {
-        Test-Condition "Cache-Control contiene no-store" ($cacheControl -match "no-store")
+    if ($null -ne $headers) {
+        $cacheControl = $headers["Cache-Control"]
+        Test-Condition "Cache-Control contiene no-store" ($null -ne $cacheControl -and $cacheControl -match "no-store")
     } else {
         Test-Condition "Cache-Control contiene no-store" $false
     }
@@ -77,6 +117,10 @@ function Test-JsonResponse {
         Test-Condition "Es un JSON valido" ($null -ne $json)
     } catch {
         Test-Condition "Es un JSON valido" $false
+        Write-Host "Diagnostic: failed to parse JSON. Content length: $($content.Length)" -ForegroundColor Yellow
+        Write-Host "--- Content Start ---" -ForegroundColor DarkGray
+        Write-Host $content -ForegroundColor DarkGray
+        Write-Host "--- Content End ---" -ForegroundColor DarkGray
         return
     }
 
@@ -91,10 +135,14 @@ function Test-JsonResponse {
 
     Test-Condition "Existe correlationId en JSON" (-not [string]::IsNullOrEmpty($json.correlationId))
 
-    $correlationHeader = $headers["X-Correlation-ID"]
-    Test-Condition "Existe X-Correlation-ID en cabeceras" (-not [string]::IsNullOrEmpty($correlationHeader))
-    if (-not [string]::IsNullOrEmpty($correlationHeader)) {
-        Test-Condition "Ambos correlation ID coinciden" ($json.correlationId -eq $correlationHeader)
+    if ($null -ne $headers) {
+        $correlationHeader = $headers["X-Correlation-ID"]
+        Test-Condition "Existe X-Correlation-ID en cabeceras" (-not [string]::IsNullOrEmpty($correlationHeader))
+        if (-not [string]::IsNullOrEmpty($correlationHeader)) {
+            Test-Condition "Ambos correlation ID coinciden" ($json.correlationId -eq $correlationHeader)
+        }
+    } else {
+        Test-Condition "Existe X-Correlation-ID en cabeceras" $false
     }
 
     Test-Condition "No contiene StackTrace" (-not ($content -match "StackTrace"))
@@ -116,69 +164,33 @@ if ($IgnoreCertificateErrors) {
 try {
     # 1. POST con application/json retorna 200
     Write-Host "`n--- Prueba 1: POST application/json ---"
-    try {
-        $response1 = Invoke-WebRequest -Uri $url -Method Post -ContentType "application/json" -Body "{}" -UseBasicParsing -UseDefaultCredentials
-        Test-JsonResponse -Response $response1 -ExpectedStatus 200
-    } catch {
-        Test-Condition "Peticion completada sin excepcion HTTP" $false
-    }
+    $response1 = Invoke-RawHttpRequest -Url $url -Method "POST" -ContentType "application/json" -Body "{}"
+    Test-JsonResponse -Response $response1 -ExpectedStatus 200
 
     # 2. POST application/json; charset=utf-8 retorna 200
     Write-Host "`n--- Prueba 2: POST application/json; charset=utf-8 ---"
-    try {
-        $response2 = Invoke-WebRequest -Uri $url -Method Post -ContentType "application/json; charset=utf-8" -Body "{}" -UseBasicParsing -UseDefaultCredentials
-        Test-JsonResponse -Response $response2 -ExpectedStatus 200
-    } catch {
-        Test-Condition "Peticion completada sin excepcion HTTP" $false
-    }
+    $response2 = Invoke-RawHttpRequest -Url $url -Method "POST" -ContentType "application/json; charset=utf-8" -Body "{}"
+    Test-JsonResponse -Response $response2 -ExpectedStatus 200
 
     # 3. GET retorna 405 y cabecera Allow
     Write-Host "`n--- Prueba 3: GET retorna 405 ---"
-    try {
-        $response3 = Invoke-WebRequest -Uri $url -Method Get -UseBasicParsing -UseDefaultCredentials
-        Test-Condition "GET retorna excepcion HTTP" $false
-    } catch [System.Net.WebException] {
-        $exResponse = $_.Exception.Response
-        if ($null -ne $exResponse) {
-            Test-JsonResponse -Response $exResponse -ExpectedStatus 405 -ExpectedErrorCode "method_not_allowed" -IsWebResponse $true
-            $headers = $exResponse.Headers
-            Test-Condition "Contiene cabecera Allow: POST" ($headers["Allow"] -match "POST")
-        } else {
-            Test-Condition "Obtenida respuesta HTTP" $false
-        }
+    $response3 = Invoke-RawHttpRequest -Url $url -Method "GET"
+    Test-JsonResponse -Response $response3 -ExpectedStatus 405 -ExpectedErrorCode "method_not_allowed"
+    if ($null -ne $response3.Headers) {
+        Test-Condition "Contiene cabecera Allow: POST" ($response3.Headers["Allow"] -match "POST")
+    } else {
+        Test-Condition "Contiene cabecera Allow: POST" $false
     }
 
     # 4. POST text/plain retorna 415
     Write-Host "`n--- Prueba 4: POST text/plain retorna 415 ---"
-    try {
-        $response4 = Invoke-WebRequest -Uri $url -Method Post -ContentType "text/plain" -Body "test" -UseBasicParsing -UseDefaultCredentials
-        Test-Condition "POST text/plain retorna excepcion HTTP" $false
-    } catch [System.Net.WebException] {
-        $exResponse = $_.Exception.Response
-        if ($null -ne $exResponse) {
-            Test-JsonResponse -Response $exResponse -ExpectedStatus 415 -ExpectedErrorCode "unsupported_media_type" -IsWebResponse $true
-        } else {
-            Test-Condition "Obtenida respuesta HTTP" $false
-        }
-    }
+    $response4 = Invoke-RawHttpRequest -Url $url -Method "POST" -ContentType "text/plain" -Body "test"
+    Test-JsonResponse -Response $response4 -ExpectedStatus 415 -ExpectedErrorCode "unsupported_media_type"
 
     # 5. POST sin Content-Type retorna 415
     Write-Host "`n--- Prueba 5: POST sin Content-Type retorna 415 ---"
-    try {
-        $request = [System.Net.WebRequest]::Create($url)
-        $request.Method = "POST"
-        $request.ContentLength = 0
-        $request.UseDefaultCredentials = $true
-        $response5 = $request.GetResponse()
-        Test-Condition "POST sin Content-Type retorna excepcion HTTP" $false
-    } catch [System.Net.WebException] {
-        $exResponse = $_.Exception.Response
-        if ($null -ne $exResponse) {
-            Test-JsonResponse -Response $exResponse -ExpectedStatus 415 -ExpectedErrorCode "unsupported_media_type" -IsWebResponse $true
-        } else {
-            Test-Condition "Obtenida respuesta HTTP" $false
-        }
-    }
+    $response5 = Invoke-RawHttpRequest -Url $url -Method "POST" -Body "{}"
+    Test-JsonResponse -Response $response5 -ExpectedStatus 415 -ExpectedErrorCode "unsupported_media_type"
 
 } finally {
     [System.Net.ServicePointManager]::ServerCertificateValidationCallback = $originalCallback
