@@ -1,0 +1,13 @@
+/* frontend/src/css/app.css */
+:root {
+  color-scheme: dark;
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+}
+.intramessenger-pipeline-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}

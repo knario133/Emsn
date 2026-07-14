@@ -1648,7 +1648,7 @@ Probar:
 
 ---
 
-### [ ] P0-T03 — Pipeline frontend
+### [x] P0-T03 — Pipeline frontend
 
 **Objetivo:** establecer build reproducible de assets.
 

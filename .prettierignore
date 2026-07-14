@@ -1,0 +1,7 @@
+node_modules/
+packages/
+.vs/
+**/bin/
+**/obj/
+src/IntraMessenger.Web/Scripts/dist/
+src/IntraMessenger.Web/Content/app/
