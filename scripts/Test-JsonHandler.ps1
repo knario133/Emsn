@@ -90,9 +90,11 @@ function Test-JsonResponse {
     }
 
     Test-Condition "Existe correlationId en JSON" (-not [string]::IsNullOrEmpty($json.correlationId))
-    Test-Condition "Existe X-Correlation-ID en cabeceras" ($headers.ContainsKey("X-Correlation-ID"))
-    if ($headers.ContainsKey("X-Correlation-ID")) {
-        Test-Condition "Ambos correlation ID coinciden" ($json.correlationId -eq $headers["X-Correlation-ID"])
+
+    $correlationHeader = $headers["X-Correlation-ID"]
+    Test-Condition "Existe X-Correlation-ID en cabeceras" (-not [string]::IsNullOrEmpty($correlationHeader))
+    if (-not [string]::IsNullOrEmpty($correlationHeader)) {
+        Test-Condition "Ambos correlation ID coinciden" ($json.correlationId -eq $correlationHeader)
     }
 
     Test-Condition "No contiene StackTrace" (-not ($content -match "StackTrace"))

@@ -62,12 +62,12 @@ namespace IntraMessenger.Web.Infrastructure.Http
             response.Charset = "utf-8";
             response.TrySkipIisCustomErrors = true;
 
-            response.Headers.Add("X-Correlation-ID", correlationId);
+            response.Headers["X-Correlation-ID"] = correlationId;
 
             response.Cache.SetCacheability(HttpCacheability.NoCache);
             response.Cache.SetNoStore();
             response.Cache.SetExpires(DateTime.UtcNow.AddYears(-1));
-            response.Headers.Add("Pragma", "no-cache");
+            response.Headers["Pragma"] = "no-cache";
         }
 
         private bool ValidateHttpMethod(HttpContext context)
@@ -80,7 +80,7 @@ namespace IntraMessenger.Web.Infrastructure.Http
             if (!isSupported)
             {
                 string allowHeaderValue = string.Join(", ", SupportedHttpMethods.Select(m => m.ToUpperInvariant()));
-                context.Response.Headers.Add("Allow", allowHeaderValue);
+                context.Response.Headers["Allow"] = allowHeaderValue;
             }
 
             return isSupported;
@@ -154,12 +154,12 @@ namespace IntraMessenger.Web.Infrastructure.Http
                 response.TrySkipIisCustomErrors = true;
                 response.StatusCode = 500;
 
-                response.Headers.Add("X-Correlation-ID", correlationId);
+                response.Headers["X-Correlation-ID"] = correlationId;
 
                 response.Cache.SetCacheability(HttpCacheability.NoCache);
                 response.Cache.SetNoStore();
                 response.Cache.SetExpires(DateTime.UtcNow.AddYears(-1));
-                response.Headers.Add("Pragma", "no-cache");
+                response.Headers["Pragma"] = "no-cache";
 
                 string safeJson = $"{{\"ok\":false,\"data\":null,\"error\":{{\"code\":\"internal_error\",\"message\":\"Ocurrió un error interno al procesar la solicitud.\"}},\"correlationId\":\"{correlationId}\"}}";
                 response.Write(safeJson);
