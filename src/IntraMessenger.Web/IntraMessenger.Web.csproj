@@ -85,6 +85,8 @@
     <Content Include="Default.aspx" />
     <Content Include="Global.asax" />
     <Content Include="Web.config" />
+    <Content Include="Scripts\dist\app.js" />
+    <Content Include="Content\app\app.css" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Default.aspx.cs">

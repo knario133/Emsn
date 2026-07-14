@@ -1,0 +1,32 @@
+# Visual Studio / .NET
+.vs/
+**/.vs/
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet restore output
+packages/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Caches and temporary files
+.cache/
+.eslintcache
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Keep these tracked:
+# package-lock.json
+# src/IntraMessenger.Web/Scripts/dist/app.js
+# src/IntraMessenger.Web/Content/app/app.css

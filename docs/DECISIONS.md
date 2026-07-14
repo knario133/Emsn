@@ -34,3 +34,10 @@
 **Decisión:** WebRTC DataChannel como transporte primario, con SignalR para señalización.  
 **Motivo:** transferencia temporal sin almacenamiento permanente.  
 **Consecuencia:** puede requerir TURN para redes restrictivas.
+
+## ADR-006 — Artefactos frontend versionados
+
+**Estado:** Aceptada  
+**Decisión:** Los artefactos generados del frontend se versionan en `Scripts/dist` y `Content/app`.  
+**Motivo:** El servidor IIS de producción no debe requerir Node.js ni ejecutar un build frontend.  
+**Consecuencia:** Toda modificación de fuentes frontend debe regenerar y confirmar los artefactos antes del commit.
