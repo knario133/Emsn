@@ -3,8 +3,8 @@
 - **Proyecto:** IntraMessenger
 - **Fase actual:** P0 — Gobierno del repositorio
 - **Última actualización:** 2026-07-14
-- **Última tarea terminada:** P0-T03 — Pipeline frontend
-- **Siguiente tarea:** P0-T04 — Infraestructura de respuesta JSON y errores
+- **Última tarea terminada:** P0-T04 — Infraestructura de respuesta JSON y errores
+- **Siguiente tarea:** P1-T01 — Script de creación de base de datos
 - **Bloqueos conocidos:** la compilación completa requiere Windows/Visual Studio.
 - **Decisiones pendientes:** nombre comercial, versiones de servidor/SQL y políticas de red.
 

@@ -1601,7 +1601,7 @@ Probar:
 
 ## Fase P0 — Gobierno del repositorio y base de trabajo
 
-### [ ] P0-T01 — Crear documentación de control
+### [x] P0-T01 — Crear documentación de control
 
 **Objetivo:** preparar archivos que eviten pérdida de contexto.
 
@@ -1670,7 +1670,7 @@ Probar:
 
 ---
 
-### [ ] P0-T04 — Infraestructura de respuesta JSON y errores
+### [x] P0-T04 — Infraestructura de respuesta JSON y errores
 
 **Objetivo:** base común para handlers.
 
