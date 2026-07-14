@@ -813,3 +813,19 @@ button:disabled {
   outline-offset: 2px !important;
   border-radius: var(--radius-sm);
 }
+
+/* Context Panel Layout & Badge fixes */
+.context-demo-badge {
+  margin-bottom: 16px;
+  display: inline-block;
+}
+.context-empty-msg {
+  font-style: italic;
+}
+
+/* Hide toggle context button on desktop */
+@media (min-width: 1200px) {
+  #btnToggleContext {
+    display: none;
+  }
+}

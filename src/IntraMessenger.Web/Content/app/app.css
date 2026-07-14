@@ -746,3 +746,15 @@ button:disabled {
   outline-offset: 2px !important;
   border-radius: var(--radius-sm);
 }
+.context-demo-badge {
+  margin-bottom: 16px;
+  display: inline-block;
+}
+.context-empty-msg {
+  font-style: italic;
+}
+@media (min-width: 1200px) {
+  #btnToggleContext {
+    display: none;
+  }
+}

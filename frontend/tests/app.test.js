@@ -7,6 +7,9 @@ import {
   getContactById,
   getCharacterCount,
   getResponsiveViewName,
+  getFocusableContactId,
+  getContactRowSubtitle,
+  getUnreadLabel,
 } from '../src/js/app.js';
 
 test('normalizeSearchText normaliza mayúsculas y acentos', () => {
@@ -91,4 +94,36 @@ test('getResponsiveViewName retorna el modo correcto en los límites', () => {
   assert.equal(getResponsiveViewName(1199), 'tablet');
   assert.equal(getResponsiveViewName(1200), 'desktop');
   assert.equal(getResponsiveViewName(1440), 'desktop');
+});
+
+test('getFocusableContactId asegura exactamente un elemento en tabIndex=0', () => {
+  const contacts = [{ id: 'c1' }, { id: 'c2' }];
+
+  // Seleccionado presente
+  assert.equal(getFocusableContactId(contacts, 'c2'), 'c2');
+
+  // Seleccionado ausente
+  assert.equal(getFocusableContactId(contacts, 'c99'), 'c1');
+
+  // Null
+  assert.equal(getFocusableContactId(contacts, null), 'c1');
+
+  // Lista vacía
+  assert.equal(getFocusableContactId([], 'c1'), null);
+  assert.equal(getFocusableContactId(null, 'c1'), null);
+});
+
+test('getContactRowSubtitle formatea correctamente el subtitulo', () => {
+  assert.equal(getContactRowSubtitle('En línea', 'Hola mundo'), 'En línea · Hola mundo');
+  assert.equal(getContactRowSubtitle('En línea', null), 'En línea');
+  assert.equal(getContactRowSubtitle(null, 'Hola mundo'), 'Hola mundo');
+  assert.equal(getContactRowSubtitle('', ''), '');
+});
+
+test('getUnreadLabel genera texto accesible o nulo si no hay pendientes', () => {
+  assert.equal(getUnreadLabel(2), '2 mensajes pendientes');
+  assert.equal(getUnreadLabel(1), '1 mensaje pendiente');
+  assert.equal(getUnreadLabel(0), null);
+  assert.equal(getUnreadLabel(-1), null);
+  assert.equal(getUnreadLabel(null), null);
 });
