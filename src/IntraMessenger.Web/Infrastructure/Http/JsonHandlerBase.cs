@@ -26,12 +26,13 @@ namespace IntraMessenger.Web.Infrastructure.Http
         public void ProcessRequest(HttpContext context)
         {
             string correlationId = Guid.NewGuid().ToString("N");
-            context.Items["CorrelationId"] = correlationId;
-
-            PrepareResponse(context.Response, correlationId);
 
             try
             {
+                context.Items["CorrelationId"] = correlationId;
+
+                PrepareResponse(context.Response, correlationId);
+
                 if (!ValidateHttpMethod(context))
                 {
                     WriteErrorResponse(context.Response, 405, "method_not_allowed", "Método HTTP no permitido.", correlationId);
@@ -146,12 +147,19 @@ namespace IntraMessenger.Web.Infrastructure.Http
         {
             try
             {
-                response.ClearContent();
+                response.Clear();
                 response.ContentType = "application/json";
                 response.ContentEncoding = Encoding.UTF8;
                 response.Charset = "utf-8";
                 response.TrySkipIisCustomErrors = true;
                 response.StatusCode = 500;
+
+                response.Headers.Add("X-Correlation-ID", correlationId);
+
+                response.Cache.SetCacheability(HttpCacheability.NoCache);
+                response.Cache.SetNoStore();
+                response.Cache.SetExpires(DateTime.UtcNow.AddYears(-1));
+                response.Headers.Add("Pragma", "no-cache");
 
                 string safeJson = $"{{\"ok\":false,\"data\":null,\"error\":{{\"code\":\"internal_error\",\"message\":\"Ocurrió un error interno al procesar la solicitud.\"}},\"correlationId\":\"{correlationId}\"}}";
                 response.Write(safeJson);
