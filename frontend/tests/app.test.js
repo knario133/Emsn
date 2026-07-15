@@ -4,6 +4,8 @@ import test from 'node:test';
 import {
   normalizeSearchText,
   filterContacts,
+  filterContactsByMode,
+  toggleFavoriteId,
   getContactById,
   getCharacterCount,
   getResponsiveViewName,
@@ -51,6 +53,50 @@ test('filterContacts filtra por nombre o departamento', () => {
   // Null/Empty query
   const matchAll = filterContacts(contacts, '');
   assert.equal(matchAll.length, 2);
+});
+
+test('filterContacts busca también por estado y preview normalizados', () => {
+  const contacts = [
+    { name: 'Camila', department: 'Diseño', statusLabel: 'En línea', preview: 'Revisión' },
+    { name: 'Diego', department: 'Operaciones', statusLabel: 'Ocupado', preview: 'Llamada' },
+  ];
+
+  assert.deepEqual(
+    filterContacts(contacts, 'linea').map((contact) => contact.name),
+    ['Camila'],
+  );
+  assert.deepEqual(
+    filterContacts(contacts, 'llamada').map((contact) => contact.name),
+    ['Diego'],
+  );
+});
+
+test('filterContactsByMode separa equipo, canales y favoritos', () => {
+  const contacts = [
+    { id: 'p1', kind: 'person' },
+    { id: 'p2', kind: 'person' },
+    { id: 'c1', kind: 'channel' },
+  ];
+
+  assert.equal(filterContactsByMode(contacts, 'recent').length, 3);
+  assert.deepEqual(
+    filterContactsByMode(contacts, 'team').map((contact) => contact.id),
+    ['p1', 'p2'],
+  );
+  assert.deepEqual(
+    filterContactsByMode(contacts, 'favorites', ['p2', 'c1']).map((contact) => contact.id),
+    ['p2', 'c1'],
+  );
+  assert.deepEqual(filterContactsByMode(null, 'recent'), []);
+});
+
+test('toggleFavoriteId agrega y quita favoritos sin mutar la entrada', () => {
+  const initial = ['c1'];
+  const added = toggleFavoriteId(initial, 'c2');
+  assert.deepEqual(added, ['c1', 'c2']);
+  assert.deepEqual(initial, ['c1']);
+  assert.deepEqual(toggleFavoriteId(added, 'c1'), ['c2']);
+  assert.deepEqual(toggleFavoriteId(null, 7), ['7']);
 });
 
 test('getContactById busca el contacto correcto', () => {

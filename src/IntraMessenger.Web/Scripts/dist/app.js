@@ -5,30 +5,38 @@
     return String(text).trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   }
   function filterContacts(contacts, query) {
-    if (!contacts || !Array.isArray(contacts)) return [];
+    if (!Array.isArray(contacts)) return [];
     const normalizedQuery = normalizeSearchText(query);
     if (!normalizedQuery) return contacts;
-    return contacts.filter((c) => {
-      const nameMatch = normalizeSearchText(c.name).includes(normalizedQuery);
-      const deptMatch = normalizeSearchText(c.department).includes(normalizedQuery);
-      return nameMatch || deptMatch;
+    return contacts.filter((contact) => {
+      const fields = [contact.name, contact.department, contact.statusLabel, contact.preview];
+      return fields.some((field) => normalizeSearchText(field).includes(normalizedQuery));
     });
   }
+  function filterContactsByMode(contacts, mode, favoriteIds2 = []) {
+    if (!Array.isArray(contacts)) return [];
+    if (mode === "favorites") {
+      const favoriteSet = new Set(favoriteIds2.map(String));
+      return contacts.filter((contact) => favoriteSet.has(String(contact.id)));
+    }
+    if (mode === "team") return contacts.filter((contact) => contact.kind !== "channel");
+    return contacts;
+  }
+  function toggleFavoriteId(favoriteIds2, contactId) {
+    const values = Array.isArray(favoriteIds2) ? favoriteIds2.map(String) : [];
+    const normalizedId = String(contactId);
+    return values.includes(normalizedId) ? values.filter((id) => id !== normalizedId) : [...values, normalizedId];
+  }
   function getContactById(contacts, id) {
-    if (!contacts || !Array.isArray(contacts)) return null;
-    return contacts.find((c) => String(c.id) === String(id)) || null;
+    if (!Array.isArray(contacts)) return null;
+    return contacts.find((contact) => String(contact.id) === String(id)) || null;
   }
   function getCharacterCount(text, maxChars) {
     if (text == null) return { count: 0, max: maxChars, isOver: false, isValid: false };
-    const str = String(text);
-    const count = str.length;
-    const isOnlySpaces = str.trim().length === 0;
-    return {
-      count,
-      max: maxChars,
-      isOver: count > maxChars,
-      isValid: count > 0 && count <= maxChars && !isOnlySpaces
-    };
+    const value = String(text);
+    const count = value.length;
+    const isOver = count > maxChars;
+    return { count, max: maxChars, isOver, isValid: count > 0 && !isOver && value.trim().length > 0 };
   }
   function getResponsiveViewName(width) {
     if (width < 768) return "mobile";
@@ -36,18 +44,17 @@
     return "desktop";
   }
   function getFocusableContactId(filteredContacts, activeContactId2) {
-    if (!filteredContacts || filteredContacts.length === 0) return null;
-    const exists = filteredContacts.some((c) => String(c.id) === String(activeContactId2));
-    if (exists && activeContactId2 != null) return String(activeContactId2);
-    return String(filteredContacts[0].id);
+    if (!Array.isArray(filteredContacts) || filteredContacts.length === 0) return null;
+    const activeExists = filteredContacts.some(
+      (contact) => String(contact.id) === String(activeContactId2)
+    );
+    return activeExists && activeContactId2 != null ? String(activeContactId2) : String(filteredContacts[0].id);
   }
   function getContactRowSubtitle(statusLabel, preview) {
-    const lbl = String(statusLabel || "").trim();
-    const prv = String(preview || "").trim();
-    if (lbl && prv) return `${lbl} · ${prv}`;
-    if (lbl) return lbl;
-    if (prv) return prv;
-    return "";
+    const label = String(statusLabel || "").trim();
+    const detail = String(preview || "").trim();
+    if (label && detail) return `${label} · ${detail}`;
+    return label || detail;
   }
   function getUnreadLabel(count) {
     if (count == null || count <= 0) return null;
@@ -56,6 +63,7 @@
   var demoContacts = [
     {
       id: "c1",
+      kind: "person",
       name: "Camila Rojas",
       department: "Diseño de Servicios",
       status: "online",
@@ -69,49 +77,53 @@
     },
     {
       id: "c2",
+      kind: "person",
       name: "Diego Muñoz",
-      department: "Operaciones",
+      department: "Ingeniería de Plataforma",
       status: "busy",
       statusLabel: "Ocupado",
       avatar: "DM",
       email: "dmunoz@demo.local",
-      description: "Coordinador General",
+      description: "Coordinación de plataforma",
       preview: "Te llamo en 5 min.",
       time: "09:15",
       unreadCount: 0
     },
     {
       id: "c3",
+      kind: "person",
       name: "Valentina Soto",
-      department: "Riesgo",
+      department: "Finanzas",
       status: "offline",
       statusLabel: "Desconectado",
       avatar: "VS",
       email: "vsoto@demo.local",
-      description: "Análisis de Riesgo",
+      description: "Análisis financiero",
       preview: "Documento aprobado.",
       time: "Ayer",
       unreadCount: 0
     },
     {
       id: "c4",
+      kind: "person",
       name: "Matías Herrera",
       department: "Tecnología",
       status: "online",
       statusLabel: "En línea",
       avatar: "MH",
       email: "mherrera@demo.local",
-      description: "Ingeniero de Software",
+      description: "Ingeniería de software",
       preview: "Despliegue finalizado.",
       time: "Ayer",
       unreadCount: 0
     },
     {
       id: "c5",
+      kind: "channel",
       name: "Canal Soporte Interno",
       department: "Soporte",
       status: "online",
-      statusLabel: "En línea",
+      statusLabel: "Canal",
       avatar: "SI",
       email: "soporte@demo.local",
       description: "Atención a usuarios internos",
@@ -120,422 +132,469 @@
       unreadCount: 0
     }
   ];
-  var activeContactId = null;
-  var elContactsList;
-  var elSearchInput;
-  var elActiveContactHeader;
-  var elContextBody;
-  var elComposerInput;
-  var elBtnSend;
-  var elCharCount;
-  var elA11yAnnouncer;
-  var elDrawerOverlay;
-  var elContextPanel;
-  var elBtnToggleContext;
-  var elBtnCloseContext;
-  var elBtnBackToContacts;
-  var elNavPanel;
-  var elMainPanel;
-  function initDOM() {
-    elContactsList = document.getElementById("contactsList");
-    elSearchInput = document.getElementById("searchInput");
-    elActiveContactHeader = document.getElementById("activeContactHeaderInfo");
-    elContextBody = document.getElementById("contextBody");
-    elComposerInput = document.getElementById("composerInput");
-    elBtnSend = document.getElementById("btnSend");
-    elCharCount = document.getElementById("charCount");
-    elA11yAnnouncer = document.getElementById("a11y-announcer");
-    elDrawerOverlay = document.getElementById("drawerOverlay");
-    elContextPanel = document.getElementById("context-panel");
-    elBtnToggleContext = document.getElementById("btnToggleContext");
-    elBtnCloseContext = document.getElementById("btnCloseContext");
-    elBtnBackToContacts = document.getElementById("btnBackToContacts");
-    elNavPanel = document.getElementById("nav-panel");
-    elMainPanel = document.getElementById("main-content");
+  var activeContactId = "c1";
+  var activeFilter = "recent";
+  var favoriteIds = ["c1", "c5"];
+  var userStatus = "online";
+  var lastFocusedBeforeModal = null;
+  var toastTimer = null;
+  var elements = {};
+  function cacheDOM() {
+    const ids = [
+      "contactsList",
+      "searchInput",
+      "activeContactHeaderInfo",
+      "contextBody",
+      "composerInput",
+      "btnSend",
+      "charCount",
+      "a11y-announcer",
+      "drawerOverlay",
+      "context-panel",
+      "btnToggleContext",
+      "btnCloseContext",
+      "btnBackToContacts",
+      "nav-panel",
+      "main-content",
+      "btnStatusMenu",
+      "statusMenu",
+      "currentStatusText",
+      "btnEmoji",
+      "emojiPanel",
+      "btnAttach",
+      "btnDemoCall",
+      "demoCallOverlay",
+      "btnCloseCall",
+      "toastPanel",
+      "btnFindPerson",
+      "btnOpenFavorites",
+      "btnCreateDemo",
+      "btnHeaderSearch",
+      "btnDeckMenu",
+      "btnViewSettings",
+      "btnMobileContacts",
+      "btnMobileChat",
+      "btnMobileDetails"
+    ];
+    ids.forEach((id) => {
+      elements[id] = document.getElementById(id);
+    });
+    elements.deckShell = document.querySelector(".deck-shell");
+    elements.filterKeys = Array.from(document.querySelectorAll(".filter-key"));
   }
-  function announce(msg) {
-    if (elA11yAnnouncer) {
-      elA11yAnnouncer.textContent = "";
-      setTimeout(() => {
-        elA11yAnnouncer.textContent = msg;
-      }, 50);
+  function announce(message, showToast = false) {
+    if (elements["a11y-announcer"]) {
+      elements["a11y-announcer"].textContent = "";
+      window.setTimeout(() => {
+        elements["a11y-announcer"].textContent = message;
+      }, 30);
     }
+    if (showToast) showLocalToast(message);
+  }
+  function showLocalToast(message) {
+    if (!elements.toastPanel) return;
+    window.clearTimeout(toastTimer);
+    elements.toastPanel.textContent = message;
+    elements.toastPanel.hidden = false;
+    toastTimer = window.setTimeout(() => {
+      elements.toastPanel.hidden = true;
+    }, 3600);
+  }
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+  function getVisibleContacts(query = "") {
+    return filterContacts(filterContactsByMode(demoContacts, activeFilter, favoriteIds), query);
   }
   function renderContacts(query = "") {
-    if (!elContactsList) return;
-    const filtered = filterContacts(demoContacts, query);
-    elContactsList.innerHTML = "";
-    if (filtered.length === 0) {
-      elContactsList.innerHTML = '<div class="empty-list-msg">No se encontraron resultados</div>';
+    const list = elements.contactsList;
+    if (!list) return;
+    const visibleContacts = getVisibleContacts(query);
+    list.replaceChildren();
+    if (visibleContacts.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "empty-list-msg";
+      empty.textContent = activeFilter === "favorites" ? "No hay favoritos que coincidan con la búsqueda." : "No se encontraron contactos.";
+      list.appendChild(empty);
       return;
     }
-    const focusableId = getFocusableContactId(filtered, activeContactId);
-    filtered.forEach((contact) => {
+    const focusableId = getFocusableContactId(visibleContacts, activeContactId);
+    visibleContacts.forEach((contact) => {
       const isSelected = String(contact.id) === String(activeContactId);
-      const isFocusable = String(contact.id) === focusableId;
-      const div = document.createElement("div");
-      div.className = "contact-item";
-      div.setAttribute("role", "option");
-      div.setAttribute("aria-selected", isSelected ? "true" : "false");
-      div.dataset.id = contact.id;
-      div.tabIndex = isFocusable ? 0 : -1;
+      const isFavorite = favoriteIds.includes(String(contact.id));
+      const row = document.createElement("div");
+      row.className = "contact-item";
+      row.dataset.id = contact.id;
+      row.setAttribute("role", "option");
+      row.setAttribute("aria-selected", String(isSelected));
+      row.setAttribute(
+        "aria-label",
+        `${contact.name}. ${getContactRowSubtitle(contact.statusLabel, contact.preview)}`
+      );
+      row.tabIndex = String(contact.id) === focusableId ? 0 : -1;
       const unreadLabel = getUnreadLabel(contact.unreadCount);
-      const unreadHtml = unreadLabel ? `<span class="contact-item-unread" aria-label="${unreadLabel}">${contact.unreadCount}</span>` : "";
-      const subtitle = getContactRowSubtitle(contact.statusLabel, contact.preview);
-      div.innerHTML = `
-      <div class="avatar ${contact.status}" aria-hidden="true">${contact.avatar}</div>
+      row.innerHTML = `
+      <div class="avatar ${escapeHtml(contact.status)}" aria-hidden="true">${escapeHtml(contact.avatar)}</div>
       <div class="contact-details">
-        <div class="contact-item-header">
-            <span class="contact-name">${contact.name}</span>
-            <span class="contact-item-time">${contact.time || ""}</span>
-        </div>
-        <div class="contact-item-footer">
-            <span class="contact-item-preview">${subtitle}</span>
-            ${unreadHtml}
-        </div>
+        <div class="contact-item-header"><span class="contact-name">${escapeHtml(contact.name)}</span><span class="contact-item-time">${escapeHtml(contact.time)}</span></div>
+        <div class="contact-item-footer"><span class="contact-item-preview">${escapeHtml(getContactRowSubtitle(contact.statusLabel, contact.preview))}</span>${unreadLabel ? `<span class="contact-item-unread" aria-label="${escapeHtml(unreadLabel)}">${contact.unreadCount}</span>` : ""}</div>
       </div>
-    `;
-      div.addEventListener("click", () => selectContact(contact.id, false));
-      elContactsList.appendChild(div);
+      <button type="button" class="favorite-key" data-favorite-id="${escapeHtml(contact.id)}" aria-label="${isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}: ${escapeHtml(contact.name)}" aria-pressed="${String(isFavorite)}">
+        <svg class="icon" aria-hidden="true"><use href="#${isFavorite ? "icon-star-filled" : "icon-star"}"></use></svg>
+      </button>`;
+      row.addEventListener("click", (event) => {
+        if (!event.target.closest(".favorite-key")) selectContact(contact.id, false);
+      });
+      list.appendChild(row);
     });
   }
   function renderActiveContact() {
-    if (!elActiveContactHeader || !elContextBody) return;
     const contact = getContactById(demoContacts, activeContactId);
-    if (!contact) {
-      elActiveContactHeader.innerHTML = '<div class="active-contact-placeholder">Selecciona un contacto</div>';
-      elContextBody.innerHTML = '<div class="context-placeholder">No hay contacto seleccionado</div>';
-      return;
+    if (!contact || !elements.activeContactHeaderInfo || !elements.contextBody) return;
+    elements.activeContactHeaderInfo.innerHTML = `
+    <div class="avatar ${escapeHtml(contact.status)} active-contact-avatar" aria-hidden="true">${escapeHtml(contact.avatar)}</div>
+    <div class="active-contact-text"><span class="active-contact-name">${escapeHtml(contact.name)}</span><span class="active-contact-dept"><strong>${escapeHtml(contact.statusLabel)}</strong> · ${escapeHtml(contact.department)}</span></div>`;
+    elements.contextBody.innerHTML = `
+    <div class="profile-glass">
+      <div class="avatar ${escapeHtml(contact.status)}" aria-hidden="true">${escapeHtml(contact.avatar)}</div>
+      <div class="profile-name">${escapeHtml(contact.name)}</div>
+      <div class="profile-status">${escapeHtml(contact.statusLabel)}</div>
+      <dl class="profile-data">
+        <div><dt aria-label="Departamento">▣</dt><dd>${escapeHtml(contact.department)}</dd></div>
+        <div><dt aria-label="Correo">✉</dt><dd>${escapeHtml(contact.email)}</dd></div>
+        <div><dt aria-label="Especialidad">◇</dt><dd>${escapeHtml(contact.description)}</dd></div>
+      </dl>
+      <div class="profile-actions">
+        <button type="button" id="btnContextSearch" class="btn-action"><svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg>Buscar</button>
+        <button type="button" id="btnContextCall" class="btn-action"><svg class="icon" aria-hidden="true"><use href="#icon-phone"></use></svg>Llamar</button>
+      </div>
+    </div>
+    <section class="files-module" aria-labelledby="filesTitle"><h3 id="filesTitle">Archivos compartidos</h3><div class="empty-files"><svg class="icon" aria-hidden="true"><use href="#icon-folder"></use></svg><span>No hay archivos compartidos.<br />El flujo normal no almacena contenido.</span></div></section>`;
+  }
+  function setFilter(filterName, moveFocus = false) {
+    activeFilter = filterName;
+    elements.filterKeys.forEach((button) => {
+      const active = button.dataset.filter === filterName;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+      if (active && moveFocus) button.focus();
+    });
+    renderContacts(elements.searchInput?.value || "");
+    const label = filterName === "favorites" ? "Favoritos" : filterName === "team" ? "Equipo" : "Recientes";
+    announce(`Filtro ${label} activado.`);
+  }
+  function toggleFavorite(contactId) {
+    const contact = getContactById(demoContacts, contactId);
+    const wasFavorite = favoriteIds.includes(String(contactId));
+    favoriteIds = toggleFavoriteId(favoriteIds, contactId);
+    renderContacts(elements.searchInput?.value || "");
+    announce(
+      `${contact?.name || "Contacto"} ${wasFavorite ? "se quitó de" : "se agregó a"} favoritos.`,
+      true
+    );
+  }
+  function updateMobileViewButtons(viewName) {
+    const contactsActive = viewName === "contacts";
+    elements.btnMobileContacts?.classList.toggle("is-active", contactsActive);
+    elements.btnMobileContacts?.setAttribute("aria-pressed", String(contactsActive));
+    elements.btnMobileChat?.classList.toggle("is-active", !contactsActive);
+    elements.btnMobileChat?.setAttribute("aria-pressed", String(!contactsActive));
+    elements.btnMobileDetails?.classList.remove("is-active");
+    elements.btnMobileDetails?.setAttribute("aria-pressed", "false");
+  }
+  function showMobileView(viewName, focusTarget = false) {
+    document.body.classList.toggle("mobile-view-nav", viewName === "contacts");
+    document.body.classList.toggle("mobile-view-chat", viewName === "chat");
+    updateMobileViewButtons(viewName);
+    syncResponsiveState();
+    if (focusTarget) {
+      if (viewName === "contacts") {
+        const selected = elements.contactsList?.querySelector('.contact-item[aria-selected="true"]');
+        (selected || elements.searchInput)?.focus();
+      } else {
+        elements.btnBackToContacts?.focus();
+      }
     }
-    elActiveContactHeader.innerHTML = `
-    <div class="avatar ${contact.status} active-contact-avatar" aria-hidden="true">${contact.avatar}</div>
-    <div class="active-contact-text">
-      <span class="active-contact-name">${contact.name}</span>
-      <span class="active-contact-dept">${contact.statusLabel || ""} - ${contact.department}</span>
-    </div>
-  `;
-    elContextBody.innerHTML = `
-    <div class="demo-badge context-demo-badge">Datos de demostración</div>
-    <div class="profile-card">
-      <div class="avatar ${contact.status}" aria-hidden="true">${contact.avatar}</div>
-      <div class="profile-name">${contact.name}</div>
-      <div class="profile-dept">${contact.statusLabel || ""}</div>
-    </div>
-
-    <div class="profile-actions">
-      <button type="button" class="btn-action">
-        <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-search"></use></svg>
-        Buscar
-      </button>
-      <button type="button" class="btn-action">
-        <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-phone"></use></svg>
-        Llamar
-      </button>
-    </div>
-
-    <div class="profile-section">
-      <h3>Información de Contacto</h3>
-      <p class="text-dim">Departamento: ${contact.department}</p>
-      <p class="text-dim">Email: ${contact.email}</p>
-      <p class="text-dim">${contact.description}</p>
-    </div>
-
-    <div class="profile-section">
-      <h3>Archivos Compartidos</h3>
-      <p class="text-dim context-empty-msg">No hay archivos en la demostración</p>
-    </div>
-  `;
+  }
+  function selectContact(id, fromKeyboard = false) {
+    activeContactId = id;
+    renderContacts(elements.searchInput?.value || "");
+    renderActiveContact();
+    if (getResponsiveViewName(window.innerWidth) === "mobile") {
+      showMobileView("chat", fromKeyboard);
+    } else if (fromKeyboard) {
+      elements.contactsList?.querySelector(`.contact-item[data-id="${id}"]`)?.focus();
+    }
+    announce(`Canal de ${getContactById(demoContacts, id)?.name || "contacto"} seleccionado.`);
   }
   function syncResponsiveState() {
     const viewName = getResponsiveViewName(window.innerWidth);
-    const isDrawerOpen = elContextPanel && elContextPanel.classList.contains("drawer-open");
+    const context = elements["context-panel"];
+    const drawerIsOpen = context?.classList.contains("drawer-open");
     if (viewName === "desktop") {
       document.body.classList.remove("mobile-view-nav", "mobile-view-chat");
-      if (elContextPanel) {
-        elContextPanel.classList.remove("drawer-open");
-        elContextPanel.setAttribute("aria-hidden", "false");
-        elContextPanel.removeAttribute("inert");
-      }
-      if (elDrawerOverlay) {
-        elDrawerOverlay.classList.remove("active");
-        elDrawerOverlay.setAttribute("aria-hidden", "true");
-      }
-      if (elNavPanel) {
-        elNavPanel.setAttribute("aria-hidden", "false");
-        elNavPanel.removeAttribute("inert");
-      }
-      if (elMainPanel) {
-        elMainPanel.setAttribute("aria-hidden", "false");
-        elMainPanel.removeAttribute("inert");
-      }
-      if (elBtnToggleContext) {
-        elBtnToggleContext.setAttribute("aria-expanded", "true");
-        elBtnToggleContext.classList.remove("btn-active");
-      }
-    } else if (viewName === "tablet") {
-      document.body.classList.remove("mobile-view-nav", "mobile-view-chat");
-      if (elContextPanel && !isDrawerOpen) {
-        elContextPanel.setAttribute("aria-hidden", "true");
-        elContextPanel.setAttribute("inert", "true");
-      }
-      if (elBtnToggleContext && !isDrawerOpen) {
-        elBtnToggleContext.setAttribute("aria-expanded", "false");
-      }
-      if (isDrawerOpen) {
-        if (elNavPanel) elNavPanel.setAttribute("inert", "true");
-        if (elMainPanel) elMainPanel.setAttribute("inert", "true");
-      } else {
-        if (elNavPanel) {
-          elNavPanel.setAttribute("aria-hidden", "false");
-          elNavPanel.removeAttribute("inert");
-        }
-        if (elMainPanel) {
-          elMainPanel.setAttribute("aria-hidden", "false");
-          elMainPanel.removeAttribute("inert");
-        }
-      }
-    } else if (viewName === "mobile") {
-      if (!document.body.classList.contains("mobile-view-nav") && !document.body.classList.contains("mobile-view-chat")) {
-        document.body.classList.add("mobile-view-nav");
-      }
-      if (elContextPanel && !isDrawerOpen) {
-        elContextPanel.setAttribute("aria-hidden", "true");
-        elContextPanel.setAttribute("inert", "true");
-      }
-      if (elBtnToggleContext && !isDrawerOpen) {
-        elBtnToggleContext.setAttribute("aria-expanded", "false");
-      }
-      if (isDrawerOpen) {
-        if (elNavPanel) elNavPanel.setAttribute("inert", "true");
-        if (elMainPanel) elMainPanel.setAttribute("inert", "true");
-      } else {
-        if (document.body.classList.contains("mobile-view-nav")) {
-          if (elNavPanel) {
-            elNavPanel.setAttribute("aria-hidden", "false");
-            elNavPanel.removeAttribute("inert");
-          }
-          if (elMainPanel) {
-            elMainPanel.setAttribute("aria-hidden", "true");
-            elMainPanel.setAttribute("inert", "true");
-          }
-        } else {
-          if (elNavPanel) {
-            elNavPanel.setAttribute("aria-hidden", "true");
-            elNavPanel.setAttribute("inert", "true");
-          }
-          if (elMainPanel) {
-            elMainPanel.setAttribute("aria-hidden", "false");
-            elMainPanel.removeAttribute("inert");
-          }
-        }
-      }
+      context?.classList.remove("drawer-open");
+      context?.setAttribute("aria-hidden", "false");
+      context?.removeAttribute("inert");
+      elements["nav-panel"]?.removeAttribute("inert");
+      elements["main-content"]?.removeAttribute("inert");
+      elements["nav-panel"]?.setAttribute("aria-hidden", "false");
+      elements["main-content"]?.setAttribute("aria-hidden", "false");
+      elements.drawerOverlay?.classList.remove("active");
+      elements.drawerOverlay?.setAttribute("aria-hidden", "true");
+      elements.btnToggleContext?.setAttribute("aria-expanded", "true");
+      return;
     }
-  }
-  function selectContact(id, isKeyboard = false) {
-    activeContactId = id;
-    const query = elSearchInput ? elSearchInput.value : "";
-    renderContacts(query);
-    renderActiveContact();
-    const viewName = getResponsiveViewName(window.innerWidth);
-    if (viewName === "mobile") {
-      document.body.classList.remove("mobile-view-nav");
-      document.body.classList.add("mobile-view-chat");
-      syncResponsiveState();
-      if (isKeyboard && elBtnBackToContacts) {
-        elBtnBackToContacts.focus();
-      }
+    if (viewName === "mobile" && !document.body.classList.contains("mobile-view-chat")) {
+      document.body.classList.add("mobile-view-nav");
+    }
+    if (!drawerIsOpen) {
+      context?.setAttribute("aria-hidden", "true");
+      context?.setAttribute("inert", "");
+      elements.btnToggleContext?.setAttribute("aria-expanded", "false");
+    }
+    if (drawerIsOpen) {
+      elements["nav-panel"]?.setAttribute("inert", "");
+      elements["main-content"]?.setAttribute("inert", "");
+      return;
+    }
+    if (viewName === "tablet") {
+      elements["nav-panel"]?.removeAttribute("inert");
+      elements["main-content"]?.removeAttribute("inert");
+      elements["nav-panel"]?.setAttribute("aria-hidden", "false");
+      elements["main-content"]?.setAttribute("aria-hidden", "false");
     } else {
-      if (isKeyboard && elContactsList) {
-        const newlySelected = elContactsList.querySelector(`.contact-item[data-id="${id}"]`);
-        if (newlySelected) newlySelected.focus();
-      }
+      const contactsVisible = document.body.classList.contains("mobile-view-nav");
+      elements["nav-panel"]?.toggleAttribute("inert", !contactsVisible);
+      elements["main-content"]?.toggleAttribute("inert", contactsVisible);
+      elements["nav-panel"]?.setAttribute("aria-hidden", String(!contactsVisible));
+      elements["main-content"]?.setAttribute("aria-hidden", String(contactsVisible));
+      updateMobileViewButtons(contactsVisible ? "contacts" : "chat");
     }
-  }
-  function setupComposer() {
-    if (!elComposerInput || !elBtnSend || !elCharCount) return;
-    const maxChars = 500;
-    elComposerInput.addEventListener("input", () => {
-      const { count, isValid, isOver } = getCharacterCount(elComposerInput.value, maxChars);
-      elCharCount.textContent = `${count} / ${maxChars}`;
-      if (isOver) {
-        elCharCount.style.color = "var(--status-error)";
-      } else {
-        elCharCount.style.color = "var(--text-dim)";
-      }
-      elBtnSend.disabled = !isValid;
-    });
-    elBtnSend.addEventListener("click", () => {
-      if (elComposerInput.value.trim() !== "") {
-        elComposerInput.value = "";
-        const { count } = getCharacterCount("", maxChars);
-        elCharCount.textContent = `${count} / ${maxChars}`;
-        elCharCount.style.color = "var(--text-dim)";
-        elBtnSend.disabled = true;
-        announce("Demostración visual: no se envió ningún mensaje.");
-      }
-    });
   }
   function toggleContextDrawer(forceState) {
-    if (!elContextPanel || !elDrawerOverlay) return;
-    const viewName = getResponsiveViewName(window.innerWidth);
-    if (viewName === "desktop") return;
-    const isOpen = elContextPanel.classList.contains("drawer-open");
-    const newState = forceState !== void 0 ? forceState : !isOpen;
-    if (newState) {
-      elContextPanel.classList.add("drawer-open");
-      elDrawerOverlay.classList.add("active");
-      elDrawerOverlay.setAttribute("aria-hidden", "false");
-      elContextPanel.setAttribute("aria-hidden", "false");
-      elContextPanel.removeAttribute("inert");
-      if (elBtnToggleContext) {
-        elBtnToggleContext.setAttribute("aria-expanded", "true");
-        elBtnToggleContext.classList.add("btn-active");
-      }
-      if (elNavPanel) elNavPanel.setAttribute("inert", "true");
-      if (elMainPanel) elMainPanel.setAttribute("inert", "true");
-      if (elBtnCloseContext) {
-        elBtnCloseContext.focus();
-      }
+    if (getResponsiveViewName(window.innerWidth) === "desktop") return;
+    const context = elements["context-panel"];
+    if (!context || !elements.drawerOverlay) return;
+    const shouldOpen = forceState ?? !context.classList.contains("drawer-open");
+    if (shouldOpen) {
+      context.classList.add("drawer-open");
+      context.removeAttribute("inert");
+      context.setAttribute("aria-hidden", "false");
+      elements.drawerOverlay.classList.add("active");
+      elements.drawerOverlay.setAttribute("aria-hidden", "false");
+      elements.btnToggleContext?.setAttribute("aria-expanded", "true");
+      elements["nav-panel"]?.setAttribute("inert", "");
+      elements["main-content"]?.setAttribute("inert", "");
+      elements.btnMobileDetails?.classList.add("is-active");
+      elements.btnMobileDetails?.setAttribute("aria-pressed", "true");
+      elements.btnCloseContext?.focus();
     } else {
-      elContextPanel.classList.remove("drawer-open");
-      elDrawerOverlay.classList.remove("active");
-      elDrawerOverlay.setAttribute("aria-hidden", "true");
-      if (viewName === "tablet") {
-        if (elNavPanel) elNavPanel.removeAttribute("inert");
-        if (elMainPanel) elMainPanel.removeAttribute("inert");
-      } else if (viewName === "mobile") {
-        if (document.body.classList.contains("mobile-view-nav")) {
-          if (elNavPanel) elNavPanel.removeAttribute("inert");
-        } else {
-          if (elMainPanel) elMainPanel.removeAttribute("inert");
-        }
-      }
-      if (elBtnToggleContext) {
-        elBtnToggleContext.setAttribute("aria-expanded", "false");
-        elBtnToggleContext.classList.remove("btn-active");
-        try {
-          elBtnToggleContext.focus({ preventScroll: true });
-        } catch {
-          elBtnToggleContext.focus();
-        }
-      }
-      elContextPanel.setAttribute("aria-hidden", "true");
-      elContextPanel.setAttribute("inert", "true");
+      context.classList.remove("drawer-open");
+      elements.drawerOverlay.classList.remove("active");
+      elements.drawerOverlay.setAttribute("aria-hidden", "true");
+      elements.btnToggleContext?.setAttribute("aria-expanded", "false");
+      context.setAttribute("aria-hidden", "true");
+      context.setAttribute("inert", "");
       syncResponsiveState();
+      elements.btnToggleContext?.focus({ preventScroll: true });
     }
   }
+  function openDemoCall() {
+    if (!elements.demoCallOverlay || !elements.deckShell) return;
+    lastFocusedBeforeModal = document.activeElement;
+    elements.demoCallOverlay.hidden = false;
+    elements.demoCallOverlay.setAttribute("aria-hidden", "false");
+    elements.deckShell.setAttribute("inert", "");
+    elements.btnCloseCall?.focus();
+    announce("Módulo local de llamada de demostración abierto.");
+  }
+  function closeDemoCall() {
+    if (!elements.demoCallOverlay || !elements.deckShell) return;
+    elements.demoCallOverlay.hidden = true;
+    elements.demoCallOverlay.setAttribute("aria-hidden", "true");
+    elements.deckShell.removeAttribute("inert");
+    lastFocusedBeforeModal?.focus?.({ preventScroll: true });
+    announce("Módulo de llamada cerrado.");
+  }
+  function togglePopover(button, panel, forceState) {
+    if (!button || !panel) return;
+    const shouldOpen = forceState ?? panel.hidden;
+    panel.hidden = !shouldOpen;
+    button.setAttribute("aria-expanded", String(shouldOpen));
+    if (shouldOpen) panel.querySelector("button")?.focus();
+  }
+  function closeTransientPanels(returnFocus = false) {
+    if (elements.statusMenu && !elements.statusMenu.hidden) {
+      elements.statusMenu.hidden = true;
+      elements.btnStatusMenu?.setAttribute("aria-expanded", "false");
+      if (returnFocus) elements.btnStatusMenu?.focus();
+      return true;
+    }
+    if (elements.emojiPanel && !elements.emojiPanel.hidden) {
+      elements.emojiPanel.hidden = true;
+      elements.btnEmoji?.setAttribute("aria-expanded", "false");
+      if (returnFocus) elements.btnEmoji?.focus();
+      return true;
+    }
+    return false;
+  }
+  function setupComposer() {
+    const input = elements.composerInput;
+    const send = elements.btnSend;
+    if (!input || !send || !elements.charCount) return;
+    const update = () => {
+      const state = getCharacterCount(input.value, 500);
+      elements.charCount.textContent = `${state.count} / 500`;
+      elements.charCount.style.color = state.isOver ? "var(--status-error)" : "var(--text-dim)";
+      send.disabled = !state.isValid;
+    };
+    input.addEventListener("input", update);
+    send.addEventListener("click", () => {
+      if (!getCharacterCount(input.value, 500).isValid) return;
+      input.value = "";
+      update();
+      announce("Envío simulado completado. No se transmitió ningún mensaje.", true);
+      input.focus();
+    });
+  }
   function setupListboxNavigation() {
-    if (!elContactsList) return;
-    elContactsList.addEventListener("keydown", (e) => {
-      const items = Array.from(elContactsList.querySelectorAll(".contact-item"));
+    elements.contactsList?.addEventListener("keydown", (event) => {
+      const items = Array.from(elements.contactsList.querySelectorAll(".contact-item"));
       if (items.length === 0) return;
-      let currentIndex = items.findIndex((item) => item === document.activeElement);
-      let newIndex = currentIndex;
-      switch (e.key) {
-        case "ArrowDown":
-          e.preventDefault();
-          newIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
-          break;
-        case "ArrowUp":
-          e.preventDefault();
-          newIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
-          break;
-        case "Home":
-          e.preventDefault();
-          newIndex = 0;
-          break;
-        case "End":
-          e.preventDefault();
-          newIndex = items.length - 1;
-          break;
-        case "Enter":
-        case " ":
-          e.preventDefault();
-          if (currentIndex >= 0) {
-            selectContact(items[currentIndex].dataset.id, true);
-          }
-          return;
-        default:
-          return;
-      }
-      if (newIndex >= 0 && newIndex !== currentIndex) {
-        items.forEach((item) => item.tabIndex = -1);
-        items[newIndex].tabIndex = 0;
-        items[newIndex].focus();
-      }
+      const currentIndex = items.findIndex((item) => item === document.activeElement);
+      let nextIndex = currentIndex;
+      if (event.key === "ArrowDown")
+        nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+      else if (event.key === "ArrowUp")
+        nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+      else if (event.key === "Home") nextIndex = 0;
+      else if (event.key === "End") nextIndex = items.length - 1;
+      else if ((event.key === "Enter" || event.key === " ") && currentIndex >= 0) {
+        event.preventDefault();
+        selectContact(items[currentIndex].dataset.id, true);
+        return;
+      } else return;
+      event.preventDefault();
+      items.forEach((item) => {
+        item.tabIndex = -1;
+      });
+      items[nextIndex].tabIndex = 0;
+      items[nextIndex].focus();
     });
   }
   function setupEvents() {
-    if (elSearchInput) {
-      elSearchInput.addEventListener("input", (e) => renderContacts(e.target.value));
-    }
-    if (elBtnToggleContext) {
-      elBtnToggleContext.addEventListener("click", () => toggleContextDrawer());
-    }
-    if (elBtnCloseContext) {
-      elBtnCloseContext.addEventListener("click", () => toggleContextDrawer(false));
-    }
-    if (elDrawerOverlay) {
-      elDrawerOverlay.addEventListener("click", () => toggleContextDrawer(false));
-    }
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        const isDrawerMode = getResponsiveViewName(window.innerWidth) !== "desktop";
-        if (isDrawerMode && elContextPanel && elContextPanel.classList.contains("drawer-open")) {
-          toggleContextDrawer(false);
-        }
+    elements.searchInput?.addEventListener("input", (event) => renderContacts(event.target.value));
+    elements.filterKeys.forEach(
+      (button) => button.addEventListener("click", () => setFilter(button.dataset.filter))
+    );
+    elements.contactsList?.addEventListener("click", (event) => {
+      const favoriteButton = event.target.closest(".favorite-key");
+      if (favoriteButton) {
+        event.stopPropagation();
+        toggleFavorite(favoriteButton.dataset.favoriteId);
       }
     });
-    if (elBtnBackToContacts) {
-      elBtnBackToContacts.addEventListener("click", () => {
-        document.body.classList.remove("mobile-view-chat");
-        document.body.classList.add("mobile-view-nav");
-        syncResponsiveState();
-        if (elContactsList && activeContactId) {
-          const selected = elContactsList.querySelector(
-            `.contact-item[data-id="${activeContactId}"]`
-          );
-          if (selected) {
-            selected.focus();
-          } else {
-            const anyFocusable = elContactsList.querySelector('.contact-item[tabindex="0"]');
-            if (anyFocusable) anyFocusable.focus();
-          }
-        }
-      });
-    }
+    elements.btnStatusMenu?.addEventListener(
+      "click",
+      () => togglePopover(elements.btnStatusMenu, elements.statusMenu)
+    );
+    elements.statusMenu?.addEventListener("click", (event) => {
+      const option = event.target.closest("[data-status]");
+      if (!option) return;
+      userStatus = option.dataset.status;
+      const labels = { online: "En línea", busy: "Ocupado", away: "Ausente" };
+      elements.currentStatusText.textContent = labels[userStatus];
+      const led = elements.btnStatusMenu.querySelector(".led");
+      led.className = `led ${userStatus === "online" ? "led-green" : userStatus === "busy" ? "led-red" : "led-amber"}`;
+      togglePopover(elements.btnStatusMenu, elements.statusMenu, false);
+      elements.btnStatusMenu.focus();
+      announce(`Estado local cambiado a ${labels[userStatus]}.`, true);
+    });
+    elements.btnEmoji?.addEventListener(
+      "click",
+      () => togglePopover(elements.btnEmoji, elements.emojiPanel)
+    );
+    elements.emojiPanel?.addEventListener("click", (event) => {
+      const option = event.target.closest("[data-emoji]");
+      if (!option || !elements.composerInput) return;
+      const input = elements.composerInput;
+      input.value = `${input.value}${input.value ? " " : ""}${option.dataset.emoji}`;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      togglePopover(elements.btnEmoji, elements.emojiPanel, false);
+      input.focus();
+      announce("Emoji insertado en el compositor.");
+    });
+    elements.btnAttach?.addEventListener(
+      "click",
+      () => announce("Adjuntar es una demostración. No se seleccionó ni almacenó ningún archivo.", true)
+    );
+    elements.btnDemoCall?.addEventListener("click", openDemoCall);
+    elements.btnCloseCall?.addEventListener("click", closeDemoCall);
+    elements.demoCallOverlay?.addEventListener("click", (event) => {
+      if (event.target === elements.demoCallOverlay) closeDemoCall();
+    });
+    elements.contextBody?.addEventListener("click", (event) => {
+      if (event.target.closest("#btnContextSearch")) focusSearch();
+      if (event.target.closest("#btnContextCall")) openDemoCall();
+    });
+    elements.btnFindPerson?.addEventListener("click", focusSearch);
+    elements.btnHeaderSearch?.addEventListener("click", focusSearch);
+    elements.btnOpenFavorites?.addEventListener("click", () => {
+      if (getResponsiveViewName(window.innerWidth) === "mobile") showMobileView("contacts");
+      setFilter("favorites", true);
+    });
+    elements.btnCreateDemo?.addEventListener(
+      "click",
+      () => announce("Canal de demostración preparado localmente. No se creó ninguna conversación.", true)
+    );
+    elements.btnDeckMenu?.addEventListener(
+      "click",
+      () => announce("Equipo local activo. Sin conexión a servicios de mensajería.", true)
+    );
+    elements.btnViewSettings?.addEventListener(
+      "click",
+      () => announce(
+        `Vista ${activeFilter === "recent" ? "Recientes" : activeFilter === "team" ? "Equipo" : "Favoritos"} activa.`,
+        true
+      )
+    );
+    elements.btnToggleContext?.addEventListener("click", () => toggleContextDrawer());
+    elements.btnCloseContext?.addEventListener("click", () => toggleContextDrawer(false));
+    elements.drawerOverlay?.addEventListener("click", () => toggleContextDrawer(false));
+    elements.btnBackToContacts?.addEventListener("click", () => showMobileView("contacts", true));
+    elements.btnMobileContacts?.addEventListener("click", () => showMobileView("contacts", true));
+    elements.btnMobileChat?.addEventListener("click", () => showMobileView("chat", true));
+    elements.btnMobileDetails?.addEventListener("click", () => toggleContextDrawer(true));
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      if (elements.demoCallOverlay && !elements.demoCallOverlay.hidden) closeDemoCall();
+      else if (elements["context-panel"]?.classList.contains("drawer-open"))
+        toggleContextDrawer(false);
+      else closeTransientPanels(true);
+    });
+    window.addEventListener("resize", syncResponsiveState);
     setupListboxNavigation();
-    window.addEventListener("resize", () => {
-      const wasCloseButtonFocused = document.activeElement === elBtnCloseContext;
-      const willBeDesktop = getResponsiveViewName(window.innerWidth) === "desktop";
-      if (wasCloseButtonFocused && willBeDesktop && elContextPanel) {
-        elContextPanel.tabIndex = -1;
-        elContextPanel.focus({ preventScroll: true });
-      }
-      syncResponsiveState();
-    });
+  }
+  function focusSearch() {
+    if (getResponsiveViewName(window.innerWidth) === "mobile") showMobileView("contacts");
+    if (elements["context-panel"]?.classList.contains("drawer-open")) toggleContextDrawer(false);
+    elements.searchInput?.focus();
+    announce("Búsqueda local preparada.");
   }
   function initApp() {
-    initDOM();
+    cacheDOM();
     setupComposer();
     setupEvents();
-    const viewName = getResponsiveViewName(window.innerWidth);
-    if (viewName === "desktop" && demoContacts.length > 0) {
-      activeContactId = demoContacts[0].id;
-    } else if (viewName === "tablet" && demoContacts.length > 0) {
-      activeContactId = demoContacts[0].id;
-    } else if (viewName === "mobile") {
+    renderContacts();
+    renderActiveContact();
+    if (getResponsiveViewName(window.innerWidth) === "mobile") {
       document.body.classList.add("mobile-view-nav");
     }
     syncResponsiveState();
-    renderContacts();
-    renderActiveContact();
   }
   if (typeof document !== "undefined") {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", initApp);
-    } else {
-      initApp();
-    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initApp);
+    else initApp();
   }
 })();
