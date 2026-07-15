@@ -700,6 +700,9 @@ a:focus-visible {
   justify-content: space-between;
   gap: 8px;
 }
+.contact-item-header {
+  padding-right: 36px;
+}
 .contact-name {
   overflow: hidden;
   font-weight: 650;
@@ -791,8 +794,26 @@ a:focus-visible {
 .active-contact-info {
   display: flex;
   min-width: 0;
+  flex: 1;
   align-items: center;
   gap: 10px;
+}
+.active-contact-text {
+  min-width: 0;
+}
+.channel-signal {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 5px 8px;
+  color: var(--status-connected);
+  background: #080d0e;
+  border: 1px solid #3e4a4c;
+  box-shadow: inset 0 0 6px rgba(75, 255, 120, 0.08);
+  font: 9px var(--font-mono);
+  letter-spacing: 0.1em;
 }
 .active-contact-avatar {
   width: 44px;
@@ -1072,6 +1093,17 @@ a:focus-visible {
   margin-bottom: 12px;
   font-size: 34px;
 }
+.demo-data-label {
+  align-self: flex-start;
+  margin: -8px 0 12px;
+  padding: 4px 7px;
+  color: var(--status-alert);
+  background: rgba(255, 181, 57, 0.06);
+  border: 1px solid rgba(255, 181, 57, 0.45);
+  font: 9px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 .profile-name {
   font-size: 20px;
 }
@@ -1106,6 +1138,12 @@ a:focus-visible {
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   margin-top: auto;
+}
+.profile-favorite {
+  grid-column: 1 / -1;
+}
+.profile-favorite[aria-pressed=true] {
+  color: var(--status-alert);
 }
 .btn-action {
   min-height: 44px;
@@ -1472,6 +1510,9 @@ a:focus-visible {
   .contact-item-time {
     display: none;
   }
+  .contact-item-header {
+    padding-right: 0;
+  }
   .nav-settings {
     display: none;
   }
@@ -1495,6 +1536,9 @@ a:focus-visible {
   .active-contact-dept {
     max-width: 120px;
     font-size: 10px;
+  }
+  .channel-signal {
+    display: none;
   }
   .main-actions {
     gap: 4px;

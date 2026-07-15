@@ -193,6 +193,7 @@ function cacheDOM() {
     'btnOpenFavorites',
     'btnCreateDemo',
     'btnHeaderSearch',
+    'btnChannelMenu',
     'btnDeckMenu',
     'btnViewSettings',
     'btnMobileContacts',
@@ -295,10 +296,14 @@ function renderActiveContact() {
 
   elements.activeContactHeaderInfo.innerHTML = `
     <div class="avatar ${escapeHtml(contact.status)} active-contact-avatar" aria-hidden="true">${escapeHtml(contact.avatar)}</div>
-    <div class="active-contact-text"><span class="active-contact-name">${escapeHtml(contact.name)}</span><span class="active-contact-dept"><strong>${escapeHtml(contact.statusLabel)}</strong> · ${escapeHtml(contact.department)}</span></div>`;
+    <div class="active-contact-text"><span class="active-contact-name">${escapeHtml(contact.name)}</span><span class="active-contact-dept"><strong>${escapeHtml(contact.statusLabel)}</strong> · ${escapeHtml(contact.department)}</span></div>
+    <span class="channel-signal" aria-label="Enlace local preparado"><span class="led led-green" aria-hidden="true"></span><span>LOCAL</span></span>`;
+
+  const isFavorite = favoriteIds.includes(String(contact.id));
 
   elements.contextBody.innerHTML = `
     <div class="profile-glass">
+      <span class="demo-data-label">Datos de demostración</span>
       <div class="avatar ${escapeHtml(contact.status)}" aria-hidden="true">${escapeHtml(contact.avatar)}</div>
       <div class="profile-name">${escapeHtml(contact.name)}</div>
       <div class="profile-status">${escapeHtml(contact.statusLabel)}</div>
@@ -310,6 +315,7 @@ function renderActiveContact() {
       <div class="profile-actions">
         <button type="button" id="btnContextSearch" class="btn-action"><svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg>Buscar</button>
         <button type="button" id="btnContextCall" class="btn-action"><svg class="icon" aria-hidden="true"><use href="#icon-phone"></use></svg>Llamar</button>
+        <button type="button" id="btnContextFavorite" class="btn-action profile-favorite" data-favorite-id="${escapeHtml(contact.id)}" aria-pressed="${String(isFavorite)}"><svg class="icon" aria-hidden="true"><use href="#${isFavorite ? 'icon-star-filled' : 'icon-star'}"></use></svg>${isFavorite ? 'Quitar favorito' : 'Favorito'}</button>
       </div>
     </div>
     <section class="files-module" aria-labelledby="filesTitle"><h3 id="filesTitle">Archivos compartidos</h3><div class="empty-files"><svg class="icon" aria-hidden="true"><use href="#icon-folder"></use></svg><span>No hay archivos compartidos.<br />El flujo normal no almacena contenido.</span></div></section>`;
@@ -334,6 +340,7 @@ function toggleFavorite(contactId) {
   const wasFavorite = favoriteIds.includes(String(contactId));
   favoriteIds = toggleFavoriteId(favoriteIds, contactId);
   renderContacts(elements.searchInput?.value || '');
+  renderActiveContact();
   announce(
     `${contact?.name || 'Contacto'} ${wasFavorite ? 'se quitó de' : 'se agregó a'} favoritos.`,
     true,
@@ -603,10 +610,15 @@ function setupEvents() {
   elements.contextBody?.addEventListener('click', (event) => {
     if (event.target.closest('#btnContextSearch')) focusSearch();
     if (event.target.closest('#btnContextCall')) openDemoCall();
+    const favoriteButton = event.target.closest('#btnContextFavorite');
+    if (favoriteButton) toggleFavorite(favoriteButton.dataset.favoriteId);
   });
 
   elements.btnFindPerson?.addEventListener('click', focusSearch);
   elements.btnHeaderSearch?.addEventListener('click', focusSearch);
+  elements.btnChannelMenu?.addEventListener('click', () =>
+    announce('Canal local preparado. No existe conexión con un servicio de mensajería.', true),
+  );
   elements.btnOpenFavorites?.addEventListener('click', () => {
     if (getResponsiveViewName(window.innerWidth) === 'mobile') showMobileView('contacts');
     setFilter('favorites', true);

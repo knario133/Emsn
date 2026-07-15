@@ -96,6 +96,7 @@
                             <button type="button" id="btnHeaderSearch" class="deck-key icon-only" aria-label="Buscar persona"><svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg></button>
                             <button type="button" id="btnDemoCall" class="deck-key call-key"><svg class="icon" aria-hidden="true"><use href="#icon-phone"></use></svg><span>Llamada demo</span></button>
                             <button type="button" id="btnToggleContext" class="deck-key icon-only" aria-label="Ver detalles" aria-expanded="false" aria-controls="context-panel"><svg class="icon" aria-hidden="true"><use href="#icon-info"></use></svg></button>
+                            <button type="button" id="btnChannelMenu" class="deck-key icon-only" aria-label="Estado del canal local"><svg class="icon" aria-hidden="true"><use href="#icon-grid"></use></svg></button>
                         </div>
                     </header>
 
